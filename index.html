@@ -1,0 +1,2266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>SMOKE INN — Редактор меню</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght,wdth@8..144,100..1000,25..151&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --panel: #1a1a1a;
+  --panel-2: #232323;
+  --line: #2e2e2e;
+  --ink: #f5f5f5;
+  --ink-dim: #888;
+  --ink-soft: #b8b8b8;
+  --paper: #ffffff;
+  --paper-ink: #0a0a0a;
+
+  /* Sizes */
+  --size-section-title: 15pt;
+  --size-section-volume: 8pt;
+  --size-section-note: 7pt;
+  --size-item-name: 9.5pt;
+  --size-item-volume: 6.8pt;
+  --size-item-price: 9.5pt;
+  --size-item-desc: 7.8pt;
+  --size-footer: 8pt;
+
+  /* Letter-spacing (global) */
+  --tracking: 0;
+
+  /* Gaps — content layout */
+  --gap-sections: 6mm;
+  --gap-title-to-note: 1.5mm;
+  --gap-title-to-items: 2mm;
+  --gap-note-to-items: 2mm;
+  --gap-items: 0.8mm;
+  --gap-items-desc: 1.6mm;
+  --gap-name-to-desc: 0.25mm;
+
+  /* Page-level (global) */
+  --gap-columns: 12mm;
+  --gap-header-to-content: 6mm;
+  --gap-content-to-footer: 3mm;
+
+  /* Page padding */
+  --pad-page-a4-top: 11mm;
+  --pad-page-a4-side: 12mm;
+  --pad-page-a4-bottom: 9mm;
+  --pad-page-half-top: 9mm;
+  --pad-page-half-side: 8mm;
+  --pad-page-half-bottom: 8mm;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Roboto Flex', sans-serif;
+  font-variation-settings: 'wght' 400, 'wdth' 100;
+  font-size: 14px;
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ============== APP LAYOUT ============== */
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+  position: relative;
+}
+
+/* ============== LEFT NAV ============== */
+.left-nav {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.left-nav .brand {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.left-nav .logo-mini {
+  font-variation-settings: 'wght' 800, 'wdth' 75;
+  letter-spacing: 0.05em;
+  font-size: 13px;
+  padding: 5px 10px;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  align-self: flex-start;
+}
+
+.left-nav h1 {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-section-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 4px;
+  font-variation-settings: 'wght' 600;
+}
+
+.nav-tab {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 3px;
+  text-align: left;
+  transition: all 0.12s ease;
+}
+
+.nav-tab.active {
+  color: var(--paper-ink);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.nav-tab:hover:not(.active) {
+  color: var(--ink);
+  border-color: var(--ink-dim);
+  background: rgba(255,255,255,0.02);
+}
+
+.nav-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 3px;
+}
+
+.nav-zoom button {
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  flex: 1;
+  height: 28px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 2px;
+}
+
+.nav-zoom button:hover { background: var(--line); }
+
+.nav-zoom span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  flex: 2;
+  text-align: center;
+  font-variation-settings: 'wght' 500;
+}
+
+.btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 3px;
+  text-align: left;
+}
+
+.btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.btn-pdf {
+  position: relative;
+  border: none;
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 3px;
+  color: #fff;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(115deg, #ff4d6d 0%, #c850c0 18%, #6a5cff 38%, #2bb8ff 58%, #2dd4bf 76%, #f59e0b 92%, #ff4d6d 100%);
+  background-size: 300% 100%;
+  animation: shimmer 6s linear infinite;
+  box-shadow: 0 4px 18px rgba(200, 80, 192, 0.35), 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-pdf::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: gloss 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.btn-pdf:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(200, 80, 192, 0.5), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.btn-pdf:active { transform: translateY(0); }
+.btn-pdf:disabled { cursor: wait; opacity: 0.85; }
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+@keyframes gloss {
+  0%, 100% { background-position: 200% 0%; }
+  50% { background-position: -100% 0%; }
+}
+
+.left-nav .spacer { flex: 1; }
+.left-nav input[type="file"] { display: none; }
+
+/* ============== CENTRAL WORKSPACE — always centers content ============== */
+.workspace {
+  background: var(--bg);
+  overflow: auto;
+  padding: 40px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.pages-stack {
+  transform-origin: top center;
+  transition: transform 0.2s ease;
+  margin: 0 auto;
+}
+
+.page-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-label {
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-variation-settings: 'wght' 500;
+  text-align: center;
+}
+
+/* ============== PAGE ============== */
+.page {
+  background: var(--paper);
+  color: var(--paper-ink);
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  font-family: 'Roboto Flex', sans-serif;
+  font-variation-settings: 'wght' 400, 'wdth' 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-a4 {
+  width: 210mm;
+  min-height: 297mm;
+  padding: var(--pad-page-a4-top) var(--pad-page-a4-side) var(--pad-page-a4-bottom);
+}
+
+.page-half {
+  width: 105mm;
+  min-height: 297mm;
+  padding: var(--pad-page-half-top) var(--pad-page-half-side) var(--pad-page-half-bottom);
+}
+
+/* When rendering to PDF, fix the size */
+.pdf-render-host .page-a4,
+.pdf-render-host .page-half {
+  height: 297mm;
+  min-height: 297mm;
+  overflow: hidden;
+}
+
+/* ============== PAGE HEADER ============== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--gap-header-to-content);
+}
+
+.logo-box {
+  display: inline-flex;
+  align-items: center;
+  padding: 3.5mm 6mm;
+  border: 1.6pt solid #0a0a0a;
+  font-variation-settings: 'wght' 900, 'wdth' 75;
+  font-size: 16pt;
+  letter-spacing: 0.05em;
+  color: #0a0a0a;
+  line-height: 1;
+  white-space: nowrap;
+  outline: none;
+}
+
+.contact-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  font-size: 8.5pt;
+  line-height: 1.4;
+  font-variation-settings: 'wght' 500, 'wdth' 100;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+}
+
+.contact-block > div { outline: none; }
+.contact-block .row-1 { font-variation-settings: 'wght' 600, 'wdth' 100; }
+
+/* ============== CONTENT AREA ============== */
+.content-area {
+  flex: 1;
+  position: relative;
+  display: grid;
+  align-content: start;
+}
+
+.page-a4 .content-area {
+  grid-template-columns: 1fr 1fr;
+  gap: 0 var(--gap-columns);
+}
+
+.page-a4 .content-area::before {
+  content: "";
+  position: absolute;
+  top: 2mm;
+  bottom: 2mm;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 1.4pt dotted #555;
+}
+
+.page-half .content-area {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sections);
+  min-width: 0;
+}
+
+/* ============== SECTION ============== */
+.menu-section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.menu-section:not(:last-child) {
+  padding-bottom: calc(var(--gap-sections) / 2);
+}
+
+.menu-section:not(:last-child)::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  border-bottom: 1.2pt dotted #777;
+}
+
+.section-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 2.5mm;
+  flex-wrap: wrap;
+  margin-bottom: var(--gap-title-to-items);
+}
+
+.menu-section.has-note .section-title-line {
+  margin-bottom: var(--gap-title-to-note);
+}
+
+.menu-section-title {
+  font-variation-settings: 'wght' 600, 'wdth' 90;
+  font-size: var(--size-section-title);
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  color: #0a0a0a;
+  outline: none;
+  line-height: 1;
+}
+
+/* Volume next to title — only when has-vol */
+.menu-section .menu-section-volume {
+  display: none;
+}
+.menu-section.has-vol .menu-section-volume {
+  display: inline;
+  font-variation-settings: 'wght' 400, 'wdth' 100;
+  font-size: var(--size-section-volume);
+  letter-spacing: var(--tracking);
+  color: #555;
+  text-transform: uppercase;
+  outline: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Section note — only when has-note */
+.menu-section .menu-section-note {
+  display: none;
+}
+.menu-section.has-note .menu-section-note {
+  display: block;
+  font-size: var(--size-section-note);
+  font-style: italic;
+  color: #444;
+  margin-bottom: var(--gap-note-to-items);
+  font-variation-settings: 'wght' 400, 'wdth' 100;
+  line-height: 1.3;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  outline: none;
+}
+
+.menu-section.has-note .menu-section-note::before {
+  content: "*";
+  margin-right: 1mm;
+}
+
+/* ============== ITEMS ============== */
+.menu-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item + .menu-item { margin-top: var(--gap-items); }
+.menu-item.has-desc + .menu-item { margin-top: var(--gap-items-desc); }
+.menu-item:not(.has-desc) + .menu-item.has-desc { margin-top: var(--gap-items-desc); }
+.menu-item:first-child { margin-top: 0 !important; }
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--size-item-name);
+  line-height: 1.3;
+  position: relative;
+}
+
+.menu-item-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4mm;
+  width: 100%;
+}
+
+.menu-item-name-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5mm;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.menu-item .name {
+  font-variation-settings: 'wght' 500, 'wdth' 100;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking);
+  color: #0a0a0a;
+  outline: none;
+  word-break: break-word;
+  font-size: var(--size-item-name);
+}
+
+/* Volume — only when has-vol */
+.menu-item .item-volume {
+  display: none;
+}
+.menu-item.has-vol .item-volume {
+  display: inline;
+  font-variation-settings: 'wght' 400, 'wdth' 100;
+  font-size: var(--size-item-volume);
+  letter-spacing: var(--tracking);
+  color: #888;
+  text-transform: uppercase;
+  outline: none;
+  white-space: nowrap;
+  position: relative;
+  top: -0.3mm;
+}
+
+.menu-item .price {
+  font-variation-settings: 'wght' 500, 'wdth' 100;
+  color: #0a0a0a;
+  white-space: nowrap;
+  font-feature-settings: "tnum";
+  outline: none;
+  text-align: right;
+  font-size: var(--size-item-price);
+  letter-spacing: var(--tracking);
+  flex-shrink: 0;
+}
+
+/* Description — only when has-desc */
+.menu-item .item-description {
+  display: none;
+}
+.menu-item.has-desc .item-description {
+  display: block;
+  font-size: var(--size-item-desc);
+  color: #0a0a0a;
+  font-style: normal;
+  font-variation-settings: 'wght' 400, 'wdth' 100;
+  margin: var(--gap-name-to-desc) 0 0 0;
+  padding: 0;
+  line-height: 1.35;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  outline: none;
+  text-align: left;
+}
+
+/* ============== EDITABLE VISUAL — non-empty fields ============== */
+[contenteditable="true"] {
+  cursor: text;
+  transition: background 0.12s ease, box-shadow 0.12s ease;
+  border-radius: 1mm;
+}
+
+[contenteditable="true"]:not(:empty):hover {
+  background: rgba(0,0,0,0.06);
+}
+
+[contenteditable="true"]:not(:empty):focus {
+  background: rgba(0,0,0,0.08);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+}
+
+/* ============== HOVER PLACEHOLDERS ==============
+   Empty fields stay hidden by default. They become tiny clickable
+   pills only when the user hovers OR focuses the parent container. */
+
+/* Item-level placeholders show on hover/focus of the item */
+.menu-item:hover:not(.has-vol) .item-volume,
+.menu-item:focus-within:not(.has-vol) .item-volume {
+  display: inline-block;
+  background: rgba(0,0,0,0.025);
+  border: 0.5pt dashed #d8d8d8;
+  border-radius: 1mm;
+  padding: 0.2mm 1.2mm;
+  font-size: 5.8pt;
+  letter-spacing: 0.06em;
+  color: #c0c0c0;
+  font-style: italic;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-left: 1mm;
+  cursor: text;
+  white-space: nowrap;
+  position: relative;
+  top: -0.3mm;
+}
+
+.menu-item:hover:not(.has-vol) .item-volume::before,
+.menu-item:focus-within:not(.has-vol) .item-volume::before {
+  content: "+ МЛ";
+}
+
+.menu-item:hover:not(.has-desc) .item-description,
+.menu-item:focus-within:not(.has-desc) .item-description {
+  display: block;
+  width: fit-content;
+  max-width: 80%;
+  background: rgba(0,0,0,0.025);
+  border: 0.5pt dashed #d8d8d8;
+  border-radius: 1mm;
+  padding: 0.3mm 1.5mm;
+  font-size: 6pt;
+  letter-spacing: 0.06em;
+  color: #c0c0c0;
+  font-style: italic;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin: var(--gap-name-to-desc) 0 0 0;
+  cursor: text;
+}
+
+.menu-item:hover:not(.has-desc) .item-description::before,
+.menu-item:focus-within:not(.has-desc) .item-description::before {
+  content: "+ ОПИСАНИЕ";
+}
+
+/* Section-level placeholders show on hover/focus of the section */
+.menu-section:hover:not(.has-vol) .menu-section-volume,
+.menu-section:focus-within:not(.has-vol) .menu-section-volume {
+  display: inline-block;
+  background: rgba(0,0,0,0.025);
+  border: 0.5pt dashed #d8d8d8;
+  border-radius: 1mm;
+  padding: 0.2mm 1.2mm;
+  font-size: 6pt;
+  letter-spacing: 0.06em;
+  color: #c0c0c0;
+  font-style: italic;
+  text-transform: uppercase;
+  line-height: 1.2;
+  cursor: text;
+  white-space: nowrap;
+}
+
+.menu-section:hover:not(.has-vol) .menu-section-volume::before,
+.menu-section:focus-within:not(.has-vol) .menu-section-volume::before {
+  content: "+ ОБЪЁМ";
+}
+
+.menu-section:hover:not(.has-note) .menu-section-note,
+.menu-section:focus-within:not(.has-note) .menu-section-note {
+  display: inline-block;
+  width: fit-content;
+  max-width: 70%;
+  background: rgba(0,0,0,0.025);
+  border: 0.5pt dashed #d8d8d8;
+  border-radius: 1mm;
+  padding: 0.3mm 1.5mm;
+  font-size: 6pt;
+  letter-spacing: 0.06em;
+  color: #c0c0c0;
+  font-style: italic;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-top: 0.5mm;
+  margin-bottom: 1mm;
+  cursor: text;
+}
+
+.menu-section:hover:not(.has-note) .menu-section-note::before,
+.menu-section:focus-within:not(.has-note) .menu-section-note::before {
+  content: "+ ПРИМЕЧАНИЕ";
+}
+
+/* When focused, the placeholder pill becomes a normal-looking input */
+[contenteditable="true"]:empty:focus {
+  background: rgba(0,0,0,0.08);
+  border-color: #555;
+  color: #555;
+  font-style: normal;
+}
+
+[contenteditable="true"]:empty:focus::before {
+  content: "" !important;
+}
+
+/* ============== EDITOR CONTROLS ============== */
+.menu-item .delete-item {
+  position: absolute;
+  left: -7mm;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5mm;
+  height: 5mm;
+  border-radius: 50%;
+  background: #333;
+  color: white;
+  border: none;
+  font-size: 9pt;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  line-height: 1;
+  padding: 0;
+  transition: opacity 0.1s ease, background 0.1s ease;
+  z-index: 4;
+}
+
+.menu-item .delete-item::before {
+  content: "";
+  position: absolute;
+  top: -3mm; bottom: -3mm;
+  left: -2mm; right: -8mm;
+}
+
+.menu-item:hover .delete-item,
+.menu-item .delete-item:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.menu-item .delete-item:hover { background: #000; }
+
+.menu-section .section-controls {
+  position: absolute;
+  right: 0;
+  top: -1mm;
+  display: flex;
+  gap: 2px;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.menu-section .section-controls::before {
+  content: "";
+  position: absolute;
+  inset: -3mm -3mm -3mm -8mm;
+}
+
+.menu-section:hover .section-controls,
+.menu-section .section-controls:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.menu-section .section-controls button {
+  background: var(--paper);
+  color: #555;
+  border: 0.6pt solid #ccc;
+  width: 5mm;
+  height: 5mm;
+  cursor: pointer;
+  border-radius: 1mm;
+  font-family: inherit;
+  font-size: 8pt;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.menu-section .section-controls button:hover {
+  background: #0a0a0a;
+  color: white;
+  border-color: #0a0a0a;
+}
+
+.menu-section .section-controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.add-item-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0.6pt dashed #bbb;
+  color: #999;
+  padding: 0.8mm 2mm;
+  font-family: inherit;
+  font-size: 7pt;
+  cursor: pointer;
+  margin-top: 1.5mm;
+  border-radius: 1mm;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.15s ease;
+  opacity: 0;
+}
+
+.menu-section:hover .add-item-btn,
+.menu-section:focus-within .add-item-btn { opacity: 1; }
+
+.add-item-btn:hover { border-color: #0a0a0a; color: #0a0a0a; }
+
+.column-add-section {
+  background: transparent;
+  color: #999;
+  border: 1pt dashed #bbb;
+  padding: 2mm;
+  font-family: inherit;
+  font-size: 7.5pt;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 3mm;
+  border-radius: 1mm;
+  transition: all 0.15s ease;
+  opacity: 0.4;
+}
+
+.column:hover .column-add-section,
+.column:focus-within .column-add-section { opacity: 1; }
+
+.column-add-section:hover { border-color: #0a0a0a; color: #0a0a0a; }
+
+/* ============== PAGE FOOTER ============== */
+.page-footer {
+  margin-top: auto;
+  padding-top: var(--gap-content-to-footer);
+  text-align: center;
+  font-size: var(--size-footer);
+  color: #0a0a0a;
+  font-variation-settings: 'wght' 500, 'wdth' 100;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  outline: none;
+}
+
+.page-footer::before { content: "*"; margin-right: 2mm; }
+
+/* ============== HIGHLIGHT INDICATORS ============== */
+.highlight-target {
+  position: relative;
+  outline: 1.5pt solid #d4af6a !important;
+  outline-offset: 1pt;
+  background: rgba(212,175,106,0.18) !important;
+  transition: outline 0.15s ease, background 0.15s ease;
+  z-index: 2;
+  border-radius: 0.5mm;
+}
+
+.column.highlight-target,
+.menu-section.highlight-target,
+.content-area.highlight-target {
+  outline: 1.5pt dashed #d4af6a !important;
+  background: transparent !important;
+  box-shadow: inset 0 0 0 9999px rgba(212,175,106,0.07) !important;
+}
+
+.page-padding-hint {
+  position: absolute;
+  background: rgba(212,175,106,0.45);
+  pointer-events: none;
+  z-index: 100;
+  outline: 0.6pt dashed #b8893f;
+}
+
+.slider-row.hover-active label,
+.slider-row.hover-active .value {
+  color: #d4af6a !important;
+}
+
+.slider-row.hover-active input[type="range"]::-webkit-slider-thumb {
+  background: #d4af6a;
+}
+
+/* ============== RIGHT — TOGGLE & PANEL ============== */
+.layout-toggle {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 90;
+  width: 36px;
+  height: 36px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  padding: 0;
+}
+
+.layout-toggle:hover {
+  background: var(--panel-2);
+  border-color: var(--ink-dim);
+}
+
+.layout-toggle.open {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+/* Animated icon: sliders ↔ X (using a single SVG with two paths that swap) */
+.layout-toggle .icon {
+  width: 18px;
+  height: 18px;
+  position: relative;
+}
+
+.layout-toggle .icon svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.2s ease, transform 0.25s ease;
+}
+
+.layout-toggle .icon-sliders { opacity: 1; transform: rotate(0); }
+.layout-toggle .icon-close { opacity: 0; transform: rotate(-90deg); }
+
+.layout-toggle.open .icon-sliders { opacity: 0; transform: rotate(90deg); }
+.layout-toggle.open .icon-close { opacity: 1; transform: rotate(0); }
+
+.right-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 320px;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  z-index: 80;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.right-panel.open {
+  transform: translateX(0);
+}
+
+.right-panel-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.right-panel-header h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.reset-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  padding: 5px 9px;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.reset-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-dim);
+}
+
+.layout-target-tabs {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.layout-target-tab {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  padding: 7px 8px;
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 3px;
+  text-align: center;
+  transition: all 0.12s ease;
+  line-height: 1.2;
+}
+
+.layout-target-tab.active {
+  color: var(--paper-ink);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.layout-target-tab:hover:not(.active) {
+  color: var(--ink);
+  border-color: var(--ink-dim);
+}
+
+.controls-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-group-label {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  font-variation-settings: 'wght' 700;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider-row .label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.slider-row label {
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-variation-settings: 'wght' 500;
+  letter-spacing: 0.04em;
+}
+
+.slider-row .value {
+  font-size: 10px;
+  color: var(--ink);
+  font-variation-settings: 'wght' 600;
+  font-feature-settings: "tnum";
+  background: var(--panel-2);
+  padding: 1px 6px;
+  border-radius: 2px;
+  min-width: 38px;
+  text-align: right;
+}
+
+.slider-row input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  cursor: grab;
+  border: 2px solid var(--panel);
+  transition: transform 0.1s ease;
+}
+
+.slider-row input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.slider-row input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.2); }
+
+.slider-row input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  cursor: grab;
+  border: 2px solid var(--panel);
+}
+
+/* ============== EXPORT/IMPORT OVERLAY ============== */
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.export-overlay.active { display: flex; }
+
+.export-overlay .spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--line);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.export-overlay .label {
+  color: var(--ink);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-variation-settings: 'wght' 500;
+}
+
+.export-overlay .substep {
+  color: var(--ink-dim);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ============== PDF RENDER HOST ============== */
+.pdf-render-host {
+  position: fixed;
+  left: -99999px;
+  top: 0;
+  background: white;
+}
+
+/* ============== SCROLLBAR ============== */
+.left-nav::-webkit-scrollbar,
+.controls-content::-webkit-scrollbar,
+.workspace::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.left-nav::-webkit-scrollbar-track,
+.controls-content::-webkit-scrollbar-track,
+.workspace::-webkit-scrollbar-track {
+  background: var(--panel);
+}
+
+.left-nav::-webkit-scrollbar-thumb,
+.controls-content::-webkit-scrollbar-thumb,
+.workspace::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+
+.left-nav::-webkit-scrollbar-thumb:hover,
+.controls-content::-webkit-scrollbar-thumb:hover,
+.workspace::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-dim);
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============== LEFT NAV ============== -->
+  <aside class="left-nav">
+    <div class="brand">
+      <div class="logo-mini">SMOKE INN</div>
+      <h1>Редактор меню</h1>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Страницы</div>
+      <button class="nav-tab active" data-page="A4" onclick="switchPage('A4', this)">A4 бар + кухня</button>
+      <button class="nav-tab" data-page="HALF_FRONT" onclick="switchPage('HALF_FRONT', this)">½A4 крепкое</button>
+      <button class="nav-tab" data-page="HALF_BACK" onclick="switchPage('HALF_BACK', this)">½A4 коктейли</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Масштаб</div>
+      <div class="nav-zoom">
+        <button onclick="changeZoom(-0.1)" title="уменьшить">−</button>
+        <span id="zoomLabel">70%</span>
+        <button onclick="changeZoom(0.1)" title="увеличить">+</button>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Файл</div>
+      <button class="btn" onclick="document.getElementById('importPdfInput').click()">📂 Импорт PDF</button>
+      <input type="file" id="importPdfInput" accept="application/pdf" onchange="importPDF(event)">
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="nav-section">
+      <button class="btn-pdf" id="pdfBtn" onclick="exportPDF()">Сохранить в PDF</button>
+    </div>
+  </aside>
+
+  <!-- ============== CENTRAL WORKSPACE ============== -->
+  <main class="workspace">
+    <div id="previewArea" class="pages-stack" style="transform: scale(0.7);"></div>
+  </main>
+
+  <!-- ============== TOGGLE BUTTON ============== -->
+  <button class="layout-toggle" id="layoutToggle" onclick="toggleRightPanel()" title="Настройки макета">
+    <span class="icon">
+      <svg class="icon-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="21" x2="4" y2="14"/>
+        <line x1="4" y1="10" x2="4" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12" y2="3"/>
+        <line x1="20" y1="21" x2="20" y2="16"/>
+        <line x1="20" y1="12" x2="20" y2="3"/>
+        <line x1="1" y1="14" x2="7" y2="14"/>
+        <line x1="9" y1="8" x2="15" y2="8"/>
+        <line x1="17" y1="16" x2="23" y2="16"/>
+      </svg>
+      <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </span>
+  </button>
+
+  <!-- ============== RIGHT — CONTROLS PANEL ============== -->
+  <aside class="right-panel" id="rightPanel">
+    <div class="right-panel-header">
+      <h2>Настройки макета</h2>
+      <button class="reset-btn" onclick="resetLayoutDefaults()">Сбросить</button>
+    </div>
+    
+    <div class="layout-target-tabs">
+      <button class="layout-target-tab active" data-target="A4_LEFT" onclick="switchLayoutTarget('A4_LEFT', this)">A4 левая<br>колонка</button>
+      <button class="layout-target-tab" data-target="A4_RIGHT" onclick="switchLayoutTarget('A4_RIGHT', this)">A4 правая<br>колонка</button>
+      <button class="layout-target-tab" data-target="HALF_FRONT" onclick="switchLayoutTarget('HALF_FRONT', this)">½A4<br>крепкое</button>
+      <button class="layout-target-tab" data-target="HALF_BACK" onclick="switchLayoutTarget('HALF_BACK', this)">½A4<br>коктейли</button>
+    </div>
+    
+    <div class="controls-content" id="controlsContent">
+      <!-- sliders rendered by JS -->
+    </div>
+  </aside>
+
+</div>
+
+<div class="export-overlay" id="exportOverlay">
+  <div class="spinner"></div>
+  <div class="label" id="overlayLabel">Сохранение PDF</div>
+  <div class="substep" id="exportSubstep">Подготовка...</div>
+</div>
+
+<div class="pdf-render-host" id="pdfHost"></div>
+
+<script>
+// ============== DEFAULT MENU DATA ==============
+const DEFAULT_DATA = {
+  A4: {
+    columns: [
+      [
+        { title: 'КАЛЬЯНЫ', volume: '', note: '', items: [
+          { name: 'ПРЕМИУМ', vol: '', price: '1600', desc: '' },
+          { name: 'СИГАРНЫЙ ЛИСТ', vol: '', price: '2100', desc: '' },
+          { name: 'ЗАМЕНА ЧАШИ', vol: '', price: '1200/1600', desc: '' }
+        ]},
+        { title: 'ПИВО И СИДР', volume: '', note: 'МЫ ПОСТОЯННО МЕНЯЕМ АССОРТИМЕНТ, ЧТОБЫ НА ВАШИХ СТОЛАХ БЫЛО САМОЕ ВКУСНОЕ ПЕННОЕ', items: [
+          { name: 'ФИЛЬТРОВАННОЕ', vol: '', price: 'ОТ 390', desc: '' },
+          { name: 'НЕФИЛЬТРОВАННОЕ', vol: '', price: 'ОТ 390', desc: '' },
+          { name: 'ТЁМНОЕ', vol: '', price: 'ОТ 350', desc: '' },
+          { name: 'КРАФТОВОЕ', vol: '', price: 'ОТ 500', desc: '' },
+          { name: 'СИДР', vol: '', price: 'ОТ 490', desc: '' }
+        ]},
+        { title: 'НАПИТКИ Б/А', volume: '', note: '', items: [
+          { name: 'АВТОРСКИЙ ЛИМОНАД', vol: '400МЛ/1Л', price: '390/650', desc: '' },
+          { name: 'COCA-COLA/FANTA/SPRITE', vol: '330МЛ', price: '240', desc: '' },
+          { name: 'RED BULL', vol: '330МЛ', price: '290', desc: '' },
+          { name: 'ADRENALINE', vol: '500МЛ', price: '290', desc: '' },
+          { name: 'НАТАХТАРИ', vol: '500МЛ', price: '290', desc: '' },
+          { name: 'BORJOMI', vol: '500МЛ', price: '290', desc: '' },
+          { name: 'ВОДА Б/Г MEVER', vol: '500МЛ', price: '190', desc: '' }
+        ]},
+        { title: 'ЧАИ', volume: '600МЛ', note: 'ЛИСТОВЫЕ ЧАИ: ПУЭРЫ, УЛУНЫ, ЗЕЛЁНЫЕ, ЧЁРНЫЕ, КРАСНЫЕ И ФРУКТОВЫЕ', items: [
+          { name: 'ОБЛЕПИХОВЫЙ', vol: '', price: '590', desc: '' },
+          { name: 'ВИШНЁВЫЙ ПУЭР', vol: '', price: '590', desc: '' },
+          { name: 'ЯГОДНЫЙ', vol: '', price: '550', desc: '' },
+          { name: 'ВИТАМИННЫЙ', vol: '', price: '550', desc: '' },
+          { name: 'ЦИТРУСОВЫЙ', vol: '', price: '590', desc: '' },
+          { name: 'ГАБА', vol: '', price: '550', desc: '' },
+          { name: 'ЛИСТОВОЙ', vol: '', price: '300', desc: '' }
+        ]},
+        { title: 'КОФЕ', volume: '', note: '', items: [
+          { name: 'АМЕРИКАНО', vol: '150МЛ', price: '200', desc: '' },
+          { name: 'ЭСПРЕССО', vol: '30МЛ', price: '200', desc: '' },
+          { name: 'ЛАТТЕ', vol: '300МЛ', price: '350', desc: '' },
+          { name: 'РАФ', vol: '300МЛ', price: '400', desc: '' },
+          { name: 'БАМБЛ', vol: '350МЛ', price: '350', desc: '' }
+        ]},
+        { title: 'ДЕСЕРТЫ', volume: '', note: '', items: [
+          { name: 'ШОКОЛАДНЫЙ ФОНДАН', vol: '', price: '490', desc: 'С ШАРИКОМ ВАНИЛЬНОГО МОРОЖЕНОГО' },
+          { name: 'ДОМАШНИЕ СЫРНИКИ', vol: '', price: '390', desc: 'СО СГУЩЁНКОЙ' },
+          { name: 'МОРОЖЕНОЕ', vol: '', price: '150', desc: 'ВАНИЛЬНОЕ / ШОКОЛАДНОЕ, 1 ШАРИК, 50 ГР' }
+        ]}
+      ],
+      [
+        { title: 'ЗАКУСКИ', volume: '', note: 'ПОДАЮТСЯ С СОУСОМ НА ВЫБОР: СЫРНЫЙ, БАРБЕКЮ, КЕТЧУП, СПАЙСИ, ЦЕЗАРЬ, АЙОЛИ БАЗИЛИК, ТЕРИЯКИ', items: [
+          { name: 'КРЕВЕТКИ', vol: '', price: '690', desc: '' },
+          { name: 'КОЛЬЦА КАЛЬМАРА', vol: '', price: '690', desc: '' },
+          { name: 'ЛУКОВЫЕ КОЛЬЦА', vol: '', price: '390', desc: '' },
+          { name: 'СЫРНЫЕ ПАЛОЧКИ', vol: '', price: '490', desc: '' },
+          { name: 'НАГГЕТСЫ', vol: '', price: '390', desc: '' },
+          { name: 'КАРТОФЕЛЬ ФРИ', vol: '', price: '290', desc: '' },
+          { name: 'БАТАТ ФРИ', vol: '', price: '390', desc: '' },
+          { name: 'НАЧОС', vol: '', price: '390', desc: '' },
+          { name: 'ФИСТАШКИ', vol: '', price: '390', desc: '' }
+        ]},
+        { title: 'САЛАТЫ', volume: '', note: '', items: [
+          { name: 'ГРЕЧЕСКИЙ', vol: '', price: '590', desc: 'БРЫНЗА, ПОМИДОРЫ, ОГУРЕЦ СВЕЖИЙ, ОЛИВКИ, МАСЛИНЫ, ПЕРЕЦ БОЛГАРСКИЙ, ОЛИВКОВОЕ МАСЛО, ПРОВАНСКИЕ ТРАВЫ' },
+          { name: 'ЗЕЛЁНЫЙ', vol: '', price: '550', desc: 'МИКС САЛАТ, ОГУРЕЦ СВЕЖИЙ, КРЕМ БРОККОЛИ, ТЫКВЕННЫЕ СЕМЕЧКИ, ОРЕХ КЕДРОВЫЙ, МАСЛО ОЛИВКОВОЕ' },
+          { name: 'ЦЕЗАРЬ С КУРИЦЕЙ', vol: '', price: '690', desc: 'КУРИНАЯ ГРУДКА, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' },
+          { name: 'ЦЕЗАРЬ С КРЕВЕТКАМИ', vol: '', price: '890', desc: 'КРЕВЕТКИ, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' }
+        ]},
+        { title: 'ГОРЯЧЕЕ', volume: '', note: 'К КАЖДОМУ БЛЮДУ ПОДАЁТСЯ МИКС-САЛАТ И КАРТОШКА ФРИ / БАТАТ ФРИ НА ВЫБОР ГОСТЯ', items: [
+          { name: 'БОЛОНЬЕЗЕ А-ЛЯ МЕКСИКА', vol: '', price: '690', desc: 'ФАРШ ГОВЯДИНА, ТОМАТНАЯ ПАСТА, ХЛОПЬЯ ЧИЛИ, КИНЗА, СЫЧУАНЬСКИЙ ПЕРЕЦ' },
+          { name: 'КУРИЦА ПО-ТАЙСКИ', vol: '', price: '590', desc: 'КУРИНАЯ ГРУДКА, СПАЙСИ СОУС, ТЕРИЯКИ СОУС, КУНЖУТ, КИНЗА' },
+          { name: 'БЕФСТРОГАНОВ', vol: '', price: '750', desc: 'ГОВЯДИНА, СЛИВКИ, ЛУК РЕПЧАТЫЙ, ШАМПИНЬОНЫ, ПЕРЕЦ ГОРОШЕК, СЛИВОЧНОЕ МАСЛО, МАРИНОВАННЫЕ ОГУРЦЫ' },
+          { name: 'ПАРМЕЗАН БАЗИЛИК', vol: '', price: '590', desc: 'АЙОЛИ БАЗИЛИК, БАЗИЛИК, ТОМАТНЫЙ СОУС, ПАРМЕЗАН' },
+          { name: 'ЦЕЗАРЬ ПОЛО', vol: '', price: '690', desc: 'КУРИНОЕ ФИЛЕ, СОУС ЦЕЗАРЬ, ЧЕРРИ, ПАРМЕЗАН' }
+        ]}
+      ]
+    ],
+    footer: 'ЕСТЬ В НАЛИЧИИ ВИНА: КРАСНЫЕ, БЕЛЫЕ И ИГРИСТЫЕ. УТОЧНЯЙТЕ АССОРТИМЕНТ У БАРМЕНА'
+  },
+  HALF_FRONT: {
+    columns: [[
+      { title: 'ВОДКА', volume: '40МЛ', note: '', items: [
+        { name: 'ЦАРСКАЯ', vol: '', price: '220', desc: '' },
+        { name: 'ABSOLUT', vol: '', price: '290', desc: '' },
+        { name: 'BELUGA', vol: '', price: '350', desc: '' }
+      ]},
+      { title: 'ВИСКИ', volume: '40МЛ', note: '', items: [
+        { name: 'JIM BEAM BOURBON', vol: '', price: '350', desc: '' },
+        { name: 'JIM BEAM APPLE/CHERRY', vol: '', price: '390', desc: '' },
+        { name: 'JACK DANIELS', vol: '', price: '450', desc: '' },
+        { name: 'JAMESON', vol: '', price: '390', desc: '' },
+        { name: 'AUCHENTOSHAN', vol: '', price: '790', desc: '' }
+      ]},
+      { title: 'ТЕКИЛА', volume: '40МЛ', note: '', items: [
+        { name: 'AGAVITA SILVER', vol: '', price: '450', desc: '' },
+        { name: 'OLMECA GOLD', vol: '', price: '450', desc: '' }
+      ]},
+      { title: 'РОМ', volume: '40МЛ', note: '', items: [
+        { name: 'BARCELO BLANCO', vol: '', price: '350', desc: '' },
+        { name: 'PLANTATION BLANCO', vol: '', price: '450', desc: '' },
+        { name: 'OAKHEART ORIGINAL', vol: '', price: '390', desc: '' }
+      ]},
+      { title: 'ДЖИН', volume: '40МЛ', note: '', items: [
+        { name: 'GORDONS', vol: '', price: '390', desc: '' },
+        { name: 'HENDRICKS', vol: '', price: '690', desc: '' },
+        { name: 'ROKU', vol: '', price: '720', desc: '' }
+      ]},
+      { title: 'ШОТЫ', volume: '40МЛ', note: '', items: [
+        { name: 'Б-52', vol: '', price: '490', desc: '' },
+        { name: 'ОБЛАКА', vol: '', price: '490', desc: '' },
+        { name: 'БОЯРСКИЙ', vol: '', price: '490', desc: '' },
+        { name: 'РЫЖАЯ СОБАКА', vol: '', price: '490', desc: '' },
+        { name: 'ХИРОСИМА', vol: '', price: '490', desc: '' }
+      ]},
+      { title: 'НАСТОЙКИ', volume: '40МЛ', note: '', items: [
+        { name: 'В АССОРТИМЕНТЕ', vol: '', price: '290', desc: '' }
+      ]}
+    ]]
+  },
+  HALF_BACK: {
+    columns: [[
+      { title: 'АВТОРСКИЕ КОКТЕЙЛИ', volume: '', note: 'НАШ БАРМЕН МОЖЕТ ПРИГОТОВИТЬ ЛЮБОЙ КОКТЕЙЛЬ ИСХОДЯ ИЗ ВАШИХ ВКУСОВЫХ ПРЕДПОЧТЕНИЙ', items: [
+        { name: 'SMOKE INN SIGNATURE', vol: '300МЛ', price: '690', desc: 'БУРБОН, ДОМАШНИЙ ЯБЛОЧНЫЙ СИРОП, ДЫМОК ИЗ ЯБЛОНЕВОЙ ЩЕПЫ, БИТТЕР' },
+        { name: 'SMOKY OLD FASHIONED', vol: '200МЛ', price: '690', desc: 'ВИСКИ, ТРОСТНИКОВЫЙ САХАР, АНГОСТУРА, КОПЧЁНАЯ КОРКА АПЕЛЬСИНА' },
+        { name: 'INN SOUR', vol: '250МЛ', price: '590', desc: 'БУРБОН, ЛИМОННЫЙ СОК, БЕЛОК, САХАРНЫЙ СИРОП, БИТТЕР' },
+        { name: 'LOUNGE SPRITZ', vol: '300МЛ', price: '590', desc: 'АПЕРОЛЬ, ИГРИСТОЕ, СОДОВАЯ, АПЕЛЬСИН, МЯТА' },
+        { name: 'ВОСТОЧНАЯ СКАЗКА', vol: '250МЛ', price: '650', desc: 'ДЖИН, РОЗОВАЯ ВОДА, ЛАЙМ, ГРАНАТОВЫЙ СИРОП, КАРДАМОН' }
+      ]},
+      { title: 'КЛАССИЧЕСКИЕ КОКТЕЙЛИ', volume: '', note: '', items: [
+        { name: 'НЕГРОНИ', vol: '250МЛ', price: '690', desc: '' },
+        { name: 'КРОВАВАЯ МЭРИ', vol: '350МЛ', price: '590', desc: '' },
+        { name: 'МАРГАРИТА', vol: '120МЛ', price: '620', desc: '' },
+        { name: 'ДАЙКИРИ', vol: '120МЛ', price: '590', desc: '' },
+        { name: 'ГИМЛЕТ', vol: '120МЛ', price: '590', desc: '' },
+        { name: 'ЛОНГ АЙЛЕНД', vol: '350МЛ', price: '750', desc: '' },
+        { name: 'БЕЛЫЙ РУССКИЙ', vol: '250МЛ', price: '590', desc: '' },
+        { name: 'ВИСКИ САУЭР', vol: '250МЛ', price: '590', desc: '' },
+        { name: 'МОХИТО', vol: '300МЛ', price: '590', desc: '' },
+        { name: 'ПИНА КОЛАДА', vol: '300МЛ', price: '590', desc: '' },
+        { name: 'АПЕРОЛЬ СПРИТЦ', vol: '300МЛ', price: '590', desc: '' },
+        { name: 'ЭСПРЕССО МАРТИНИ', vol: '120МЛ', price: '590', desc: '' }
+      ]}
+    ]]
+  }
+};
+
+// ============== LAYOUT CONTROLS DEFINITION ==============
+const PER_TAB_CONTROLS = [
+  { group: 'РАЗМЕРЫ ШРИФТОВ', controls: [
+    { var: '--size-section-title',  label: 'Заголовок секции',   unit: 'pt', min: 9,  max: 22, step: 0.5, default: 15,  highlight: '.menu-section-title' },
+    { var: '--size-section-volume', label: 'Объём у заголовка',  unit: 'pt', min: 4,  max: 12, step: 0.5, default: 8,   highlight: '.menu-section.has-vol .menu-section-volume' },
+    { var: '--size-section-note',   label: 'Примечание секции',  unit: 'pt', min: 4,  max: 12, step: 0.5, default: 7,   highlight: '.menu-section.has-note .menu-section-note' },
+    { var: '--size-item-name',      label: 'Название позиции',   unit: 'pt', min: 6,  max: 14, step: 0.5, default: 9.5, highlight: '.menu-item .name' },
+    { var: '--size-item-volume',    label: 'Объём у позиции',    unit: 'pt', min: 4,  max: 10, step: 0.5, default: 6.8, highlight: '.menu-item.has-vol .item-volume' },
+    { var: '--size-item-price',     label: 'Цена',               unit: 'pt', min: 6,  max: 14, step: 0.5, default: 9.5, highlight: '.menu-item .price' },
+    { var: '--size-item-desc',      label: 'Описание позиции',   unit: 'pt', min: 4,  max: 12, step: 0.5, default: 7.8, highlight: '.menu-item.has-desc .item-description' }
+  ]},
+  { group: 'ОТСТУПЫ — СЕКЦИИ', controls: [
+    { var: '--gap-sections',       label: 'Между секциями',                  unit: 'mm', min: 0, max: 14, step: 0.5, default: 6,   highlight: '.column' },
+    { var: '--gap-title-to-note',  label: 'Заголовок → примечание',          unit: 'mm', min: 0, max: 6,  step: 0.1, default: 1.5, highlight: '.menu-section.has-note .section-title-line' },
+    { var: '--gap-title-to-items', label: 'Заголовок → позиции (без прим.)', unit: 'mm', min: 0, max: 6,  step: 0.1, default: 2.0, highlight: '.menu-section:not(.has-note) .section-title-line' },
+    { var: '--gap-note-to-items',  label: 'Примечание → позиции',            unit: 'mm', min: 0, max: 6,  step: 0.1, default: 2.0, highlight: '.menu-section.has-note .menu-section-note' }
+  ]},
+  { group: 'ОТСТУПЫ — ПОЗИЦИИ', controls: [
+    { var: '--gap-items',         label: 'Между позициями',                 unit: 'mm', min: 0, max: 5,  step: 0.1,  default: 0.8,  highlight: '.menu-item:not(.has-desc) + .menu-item:not(.has-desc)' },
+    { var: '--gap-items-desc',    label: 'Между позиц. (с описанием)',      unit: 'mm', min: 0, max: 8,  step: 0.1,  default: 1.6,  highlight: '.menu-item.has-desc + .menu-item, .menu-item:not(.has-desc) + .menu-item.has-desc' },
+    { var: '--gap-name-to-desc',  label: 'Название → описание',             unit: 'mm', min: 0, max: 3,  step: 0.05, default: 0.25, highlight: '.menu-item.has-desc .item-description' }
+  ]}
+];
+
+const GLOBAL_CONTROLS = [
+  { group: 'ТИПОГРАФИКА', controls: [
+    { var: '--tracking',          label: 'Межбуквенный (трекинг)',     unit: 'em', min: 0,    max: 0.2, step: 0.01, default: 0,  highlight: '.menu-section-title, .menu-item .name, .menu-item .price' },
+    { var: '--size-footer',       label: 'Подвал страницы',            unit: 'pt', min: 5,    max: 14,  step: 0.5,  default: 8,  highlight: '.page-footer' }
+  ]},
+  { group: 'СТРАНИЦА — ОТСТУПЫ', controls: [
+    { var: '--gap-columns',           label: 'Между колонками A4',     unit: 'mm', min: 4, max: 24, step: 0.5, default: 12, highlight: '.page-a4 .content-area' },
+    { var: '--gap-header-to-content', label: 'Шапка → контент',        unit: 'mm', min: 2, max: 14, step: 0.5, default: 6,  highlight: '.page-header' },
+    { var: '--gap-content-to-footer', label: 'Контент → подвал',       unit: 'mm', min: 0, max: 12, step: 0.5, default: 3,  highlight: '.page-footer' }
+  ]},
+  { group: 'ПОЛЯ A4', controls: [
+    { var: '--pad-page-a4-top',    label: 'Сверху',     unit: 'mm', min: 5, max: 25, step: 0.5, default: 11, highlightPad: { page: '.page-a4', side: 'top' } },
+    { var: '--pad-page-a4-side',   label: 'По бокам',   unit: 'mm', min: 5, max: 25, step: 0.5, default: 12, highlightPad: { page: '.page-a4', side: 'side' } },
+    { var: '--pad-page-a4-bottom', label: 'Снизу',      unit: 'mm', min: 5, max: 25, step: 0.5, default: 9,  highlightPad: { page: '.page-a4', side: 'bottom' } }
+  ]},
+  { group: 'ПОЛЯ ½A4', controls: [
+    { var: '--pad-page-half-top',    label: 'Сверху',     unit: 'mm', min: 4, max: 18, step: 0.5, default: 9, highlightPad: { page: '.page-half', side: 'top' } },
+    { var: '--pad-page-half-side',   label: 'По бокам',   unit: 'mm', min: 4, max: 18, step: 0.5, default: 8, highlightPad: { page: '.page-half', side: 'side' } },
+    { var: '--pad-page-half-bottom', label: 'Снизу',      unit: 'mm', min: 4, max: 18, step: 0.5, default: 8, highlightPad: { page: '.page-half', side: 'bottom' } }
+  ]}
+];
+
+const TABS = ['A4_LEFT', 'A4_RIGHT', 'HALF_FRONT', 'HALF_BACK'];
+
+const PER_TAB_DEFAULTS = {};
+PER_TAB_CONTROLS.forEach(g => g.controls.forEach(c => { PER_TAB_DEFAULTS[c.var] = c.default; }));
+const GLOBAL_DEFAULTS = {};
+GLOBAL_CONTROLS.forEach(g => g.controls.forEach(c => { GLOBAL_DEFAULTS[c.var] = c.default; }));
+
+// ============== STATE ==============
+let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let perTabLayout = {
+  'A4_LEFT':    { ...PER_TAB_DEFAULTS },
+  'A4_RIGHT':   { ...PER_TAB_DEFAULTS },
+  'HALF_FRONT': { ...PER_TAB_DEFAULTS },
+  'HALF_BACK':  { ...PER_TAB_DEFAULTS }
+};
+let globalLayout = { ...GLOBAL_DEFAULTS };
+let currentPage = 'A4';
+let currentLayoutTarget = 'A4_LEFT';
+let zoom = 0.7;
+
+try {
+  const savedData = localStorage.getItem('smokeinn_v15_data');
+  if (savedData) {
+    const loaded = JSON.parse(savedData);
+    if (loaded.A4 && loaded.HALF_FRONT && loaded.HALF_BACK) data = loaded;
+  }
+  const savedPerTab = localStorage.getItem('smokeinn_v15_perTab');
+  if (savedPerTab) {
+    const loaded = JSON.parse(savedPerTab);
+    TABS.forEach(t => {
+      if (loaded[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS, ...loaded[t] };
+    });
+  }
+  const savedGlobal = localStorage.getItem('smokeinn_v15_global');
+  if (savedGlobal) {
+    const loaded = JSON.parse(savedGlobal);
+    globalLayout = { ...GLOBAL_DEFAULTS, ...loaded };
+  }
+} catch (e) {}
+
+function persistData() { try { localStorage.setItem('smokeinn_v15_data', JSON.stringify(data)); } catch (e) {} }
+function persistLayout() {
+  try {
+    localStorage.setItem('smokeinn_v15_perTab', JSON.stringify(perTabLayout));
+    localStorage.setItem('smokeinn_v15_global', JSON.stringify(globalLayout));
+  } catch (e) {}
+}
+
+function escapeHtml(s) {
+  if (s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function hasContent(s) { return s && s.trim().length > 0; }
+
+// ============== APPLY LAYOUT ==============
+function applyLayout() {
+  const root = document.documentElement;
+  for (const [k, v] of Object.entries(globalLayout)) {
+    const ctrl = findGlobalControl(k);
+    const unit = ctrl ? ctrl.unit : 'mm';
+    root.style.setProperty(k, v + unit);
+  }
+  TABS.forEach(tab => {
+    const scopes = document.querySelectorAll(`[data-layout-tab="${tab}"]`);
+    scopes.forEach(scope => {
+      for (const [k, v] of Object.entries(perTabLayout[tab])) {
+        const ctrl = findPerTabControl(k);
+        const unit = ctrl ? ctrl.unit : 'mm';
+        scope.style.setProperty(k, v + unit);
+      }
+    });
+  });
+}
+
+function findPerTabControl(varName) {
+  for (const g of PER_TAB_CONTROLS) {
+    for (const c of g.controls) if (c.var === varName) return c;
+  }
+  return null;
+}
+
+function findGlobalControl(varName) {
+  for (const g of GLOBAL_CONTROLS) {
+    for (const c of g.controls) if (c.var === varName) return c;
+  }
+  return null;
+}
+
+function resetLayoutDefaults() {
+  if (!confirm('Сбросить все настройки макета к значениям по умолчанию?')) return;
+  TABS.forEach(t => { perTabLayout[t] = { ...PER_TAB_DEFAULTS }; });
+  globalLayout = { ...GLOBAL_DEFAULTS };
+  persistLayout();
+  applyLayout();
+  renderControlsPanel();
+}
+
+function formatValue(v, unit) {
+  const n = Number(v);
+  if (unit === 'em') return n.toFixed(2) + 'em';
+  if (Number.isInteger(n)) return n + unit;
+  return n.toFixed(n < 1 ? 2 : 1) + unit;
+}
+
+// ============== TAB & PAGE SYNC ==============
+function switchPage(page, el) {
+  currentPage = page;
+  document.querySelectorAll('.nav-tab[data-page]').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  
+  let newTarget = currentLayoutTarget;
+  if (page === 'A4') {
+    if (currentLayoutTarget !== 'A4_LEFT' && currentLayoutTarget !== 'A4_RIGHT') {
+      newTarget = 'A4_LEFT';
+    }
+  } else if (page === 'HALF_FRONT') {
+    newTarget = 'HALF_FRONT';
+  } else if (page === 'HALF_BACK') {
+    newTarget = 'HALF_BACK';
+  }
+  if (newTarget !== currentLayoutTarget) {
+    currentLayoutTarget = newTarget;
+    document.querySelectorAll('.layout-target-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.target === newTarget);
+    });
+    renderControlsPanel();
+  }
+  
+  renderPage();
+}
+
+function switchLayoutTarget(target, el) {
+  currentLayoutTarget = target;
+  document.querySelectorAll('.layout-target-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  
+  let newPage = currentPage;
+  if (target === 'A4_LEFT' || target === 'A4_RIGHT') newPage = 'A4';
+  else if (target === 'HALF_FRONT') newPage = 'HALF_FRONT';
+  else if (target === 'HALF_BACK') newPage = 'HALF_BACK';
+  
+  if (newPage !== currentPage) {
+    currentPage = newPage;
+    document.querySelectorAll('.nav-tab[data-page]').forEach(t => {
+      t.classList.toggle('active', t.dataset.page === newPage);
+    });
+    renderPage();
+  }
+  
+  renderControlsPanel();
+}
+
+function toggleRightPanel() {
+  const panel = document.getElementById('rightPanel');
+  const btn = document.getElementById('layoutToggle');
+  panel.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function changeZoom(delta) {
+  zoom = Math.max(0.3, Math.min(1.4, zoom + delta));
+  document.getElementById('previewArea').style.transform = `scale(${zoom})`;
+  document.getElementById('zoomLabel').textContent = Math.round(zoom * 100) + '%';
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('rightPanel').classList.contains('open')) {
+    toggleRightPanel();
+  }
+});
+
+// ============== RENDER PAGE ==============
+function buildHeader() {
+  return `
+    <div class="page-header">
+      <div class="logo-box" contenteditable="true">SMOKE INN</div>
+      <div class="contact-block">
+        <div class="row-1" contenteditable="true">LOUNGE &amp; BAR</div>
+        <div class="row-2" contenteditable="true">SMOKEINN.COM</div>
+        <div class="row-3" contenteditable="true">+79992273434</div>
+      </div>
+    </div>
+  `;
+}
+
+function buildItem(key, cIdx, sIdx, iIdx, item) {
+  const itemHasVol = hasContent(item.vol);
+  const itemHasDesc = hasContent(item.desc);
+  let itemClass = 'menu-item';
+  if (itemHasVol) itemClass += ' has-vol';
+  if (itemHasDesc) itemClass += ' has-desc';
+  
+  return `
+    <div class="${itemClass}">
+      <button class="delete-item" onclick="deleteItem('${key}', ${cIdx}, ${sIdx}, ${iIdx})" title="удалить">×</button>
+      <div class="menu-item-row">
+        <div class="menu-item-name-wrap">
+          <span class="name" contenteditable="true" 
+                oninput="updateItem('${key}', ${cIdx}, ${sIdx}, ${iIdx}, 'name', this.innerText)">${escapeHtml(item.name)}</span>
+          <span class="item-volume" contenteditable="true" 
+                oninput="updateItem('${key}', ${cIdx}, ${sIdx}, ${iIdx}, 'vol', this.innerText)"
+                onblur="syncItemClasses(this, '${key}', ${cIdx}, ${sIdx}, ${iIdx})">${escapeHtml(item.vol || '')}</span>
+        </div>
+        <span class="price" contenteditable="true" 
+              oninput="updateItem('${key}', ${cIdx}, ${sIdx}, ${iIdx}, 'price', this.innerText)">${escapeHtml(item.price)}</span>
+      </div>
+      <div class="item-description" contenteditable="true" 
+           oninput="updateItem('${key}', ${cIdx}, ${sIdx}, ${iIdx}, 'desc', this.innerText)"
+           onblur="syncItemClasses(this, '${key}', ${cIdx}, ${sIdx}, ${iIdx})">${escapeHtml(item.desc || '')}</div>
+    </div>
+  `;
+}
+
+function buildSection(key, cIdx, sIdx, s, totalSections, totalCols) {
+  const itemsHTML = s.items.map((item, iIdx) => buildItem(key, cIdx, sIdx, iIdx, item)).join('');
+  const showH = totalCols > 1;
+  const canL = cIdx > 0;
+  const canR = cIdx < totalCols - 1;
+  
+  const sectionHasVol = hasContent(s.volume);
+  const sectionHasNote = hasContent(s.note);
+  let sectionClass = 'menu-section';
+  if (sectionHasVol) sectionClass += ' has-vol';
+  if (sectionHasNote) sectionClass += ' has-note';
+  
+  return `
+    <div class="${sectionClass}">
+      <div class="section-controls">
+        ${showH ? `
+          <button onclick="moveSectionH('${key}', ${cIdx}, ${sIdx}, -1)" ${!canL ? 'disabled' : ''} title="влево">←</button>
+          <button onclick="moveSectionH('${key}', ${cIdx}, ${sIdx}, 1)" ${!canR ? 'disabled' : ''} title="вправо">→</button>
+        ` : ''}
+        <button onclick="moveSection('${key}', ${cIdx}, ${sIdx}, -1)" ${sIdx === 0 ? 'disabled' : ''} title="выше">↑</button>
+        <button onclick="moveSection('${key}', ${cIdx}, ${sIdx}, 1)" ${sIdx === totalSections-1 ? 'disabled' : ''} title="ниже">↓</button>
+        <button onclick="deleteSection('${key}', ${cIdx}, ${sIdx})" title="удалить секцию">✕</button>
+      </div>
+      <div class="section-title-line">
+        <span class="menu-section-title" contenteditable="true" 
+              oninput="updateSection('${key}', ${cIdx}, ${sIdx}, 'title', this.innerText)">${escapeHtml(s.title)}</span>
+        <span class="menu-section-volume" contenteditable="true" 
+              oninput="updateSection('${key}', ${cIdx}, ${sIdx}, 'volume', this.innerText)"
+              onblur="syncSectionClasses(this, '${key}', ${cIdx}, ${sIdx})">${escapeHtml(s.volume || '')}</span>
+      </div>
+      <div class="menu-section-note" contenteditable="true" 
+           oninput="updateSection('${key}', ${cIdx}, ${sIdx}, 'note', this.innerText)"
+           onblur="syncSectionClasses(this, '${key}', ${cIdx}, ${sIdx})">${escapeHtml(s.note || '')}</div>
+      <div class="menu-items">${itemsHTML}</div>
+      <button class="add-item-btn" onclick="addItem('${key}', ${cIdx}, ${sIdx})">+ ПОЗИЦИЮ</button>
+    </div>
+  `;
+}
+
+function buildColumn(key, cIdx, col, totalCols, layoutTab) {
+  const sectionsHTML = col.map((s, sIdx) => buildSection(key, cIdx, sIdx, s, col.length, totalCols)).join('');
+  return `
+    <div class="column" data-layout-tab="${layoutTab}">
+      ${sectionsHTML}
+      <button class="column-add-section" onclick="addSection('${key}', ${cIdx})">+ ДОБАВИТЬ СЕКЦИЮ</button>
+    </div>
+  `;
+}
+
+function buildPageHTML(key) {
+  const tabData = data[key];
+  const isA4 = key === 'A4';
+  const pageClass = isA4 ? 'page page-a4' : 'page page-half';
+  const totalCols = tabData.columns.length;
+  
+  let columnsHTML;
+  if (isA4) {
+    columnsHTML = buildColumn(key, 0, tabData.columns[0], totalCols, 'A4_LEFT')
+                + buildColumn(key, 1, tabData.columns[1], totalCols, 'A4_RIGHT');
+  } else {
+    columnsHTML = buildColumn(key, 0, tabData.columns[0], totalCols, key);
+  }
+  
+  const headerHTML = isA4 ? buildHeader() : '';
+  const footerHTML = (isA4 && tabData.footer !== undefined) 
+    ? `<div class="page-footer" contenteditable="true" oninput="updateFooter('${key}', this.innerText)">${escapeHtml(tabData.footer)}</div>`
+    : '';
+  
+  const labels = {
+    'A4': 'A4 — БАР + КУХНЯ',
+    'HALF_FRONT': '½A4 — КРЕПКОЕ',
+    'HALF_BACK': '½A4 — КОКТЕЙЛИ'
+  };
+  
+  return `
+    <div class="page-wrap">
+      <div class="page-label">${labels[key]}</div>
+      <div class="${pageClass}">
+        ${headerHTML}
+        <div class="content-area">${columnsHTML}</div>
+        ${footerHTML}
+      </div>
+    </div>
+  `;
+}
+
+function renderPage() {
+  document.getElementById('previewArea').innerHTML = buildPageHTML(currentPage);
+  applyLayout();
+}
+
+function updateSection(key, cIdx, sIdx, field, val) {
+  data[key].columns[cIdx][sIdx][field] = val;
+  persistData();
+}
+
+function updateItem(key, cIdx, sIdx, iIdx, field, val) {
+  data[key].columns[cIdx][sIdx].items[iIdx][field] = val;
+  persistData();
+}
+
+function syncItemClasses(el, key, cIdx, sIdx, iIdx) {
+  const itemEl = el.closest('.menu-item');
+  if (!itemEl) return;
+  const item = data[key].columns[cIdx][sIdx].items[iIdx];
+  itemEl.classList.toggle('has-vol', hasContent(item.vol));
+  itemEl.classList.toggle('has-desc', hasContent(item.desc));
+}
+
+function syncSectionClasses(el, key, cIdx, sIdx) {
+  const sectionEl = el.closest('.menu-section');
+  if (!sectionEl) return;
+  const section = data[key].columns[cIdx][sIdx];
+  sectionEl.classList.toggle('has-vol', hasContent(section.volume));
+  sectionEl.classList.toggle('has-note', hasContent(section.note));
+}
+
+function updateFooter(key, val) { data[key].footer = val; persistData(); }
+
+function addItem(key, cIdx, sIdx) {
+  data[key].columns[cIdx][sIdx].items.push({ name: 'НОВАЯ ПОЗИЦИЯ', vol: '', price: '0', desc: '' });
+  persistData(); renderPage();
+}
+
+function deleteItem(key, cIdx, sIdx, iIdx) {
+  data[key].columns[cIdx][sIdx].items.splice(iIdx, 1);
+  persistData(); renderPage();
+}
+
+function addSection(key, cIdx) {
+  data[key].columns[cIdx].push({
+    title: 'НОВАЯ СЕКЦИЯ', volume: '', note: '',
+    items: [{ name: 'НОВАЯ ПОЗИЦИЯ', vol: '', price: '0', desc: '' }]
+  });
+  persistData(); renderPage();
+}
+
+function deleteSection(key, cIdx, sIdx) {
+  if (!confirm('Удалить секцию целиком?')) return;
+  data[key].columns[cIdx].splice(sIdx, 1);
+  persistData(); renderPage();
+}
+
+function moveSection(key, cIdx, sIdx, dir) {
+  const col = data[key].columns[cIdx];
+  const newIdx = sIdx + dir;
+  if (newIdx < 0 || newIdx >= col.length) return;
+  [col[sIdx], col[newIdx]] = [col[newIdx], col[sIdx]];
+  persistData(); renderPage();
+}
+
+function moveSectionH(key, cIdx, sIdx, dir) {
+  const cols = data[key].columns;
+  const targetCIdx = cIdx + dir;
+  if (targetCIdx < 0 || targetCIdx >= cols.length) return;
+  const [section] = cols[cIdx].splice(sIdx, 1);
+  cols[targetCIdx].push(section);
+  persistData(); renderPage();
+}
+
+// ============== CONTROLS PANEL ==============
+function renderControlsPanel() {
+  const container = document.getElementById('controlsContent');
+  const tabValues = perTabLayout[currentLayoutTarget];
+  
+  const perTabHTML = PER_TAB_CONTROLS.map(g => `
+    <div class="control-group" data-scope="per-tab">
+      <div class="control-group-label">${g.group}</div>
+      ${g.controls.map(c => `
+        <div class="slider-row" data-var="${c.var}" data-scope="per-tab">
+          <div class="label-row">
+            <label>${c.label}</label>
+            <span class="value" id="val-${c.var}">${formatValue(tabValues[c.var], c.unit)}</span>
+          </div>
+          <input type="range" data-var="${c.var}" data-scope="per-tab"
+                 min="${c.min}" max="${c.max}" step="${c.step}"
+                 value="${tabValues[c.var]}">
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  
+  const globalHTML = `
+    <div class="control-group-label" style="margin-top: 10px; color: var(--ink); border-bottom: 2px solid var(--ink-dim); padding-bottom: 10px;">— ОБЩИЕ НАСТРОЙКИ —</div>
+  ` + GLOBAL_CONTROLS.map(g => `
+    <div class="control-group" data-scope="global">
+      <div class="control-group-label">${g.group}</div>
+      ${g.controls.map(c => `
+        <div class="slider-row" data-var="${c.var}" data-scope="global"${c.highlightPad ? ` data-highlight-pad='${JSON.stringify(c.highlightPad)}'` : ''}>
+          <div class="label-row">
+            <label>${c.label}</label>
+            <span class="value" id="val-${c.var}">${formatValue(globalLayout[c.var], c.unit)}</span>
+          </div>
+          <input type="range" data-var="${c.var}" data-scope="global"
+                 min="${c.min}" max="${c.max}" step="${c.step}"
+                 value="${globalLayout[c.var]}">
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  
+  container.innerHTML = perTabHTML + globalHTML;
+  
+  container.querySelectorAll('input[type="range"]').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      const varName = e.target.dataset.var;
+      const scope = e.target.dataset.scope;
+      
+      if (scope === 'per-tab') {
+        perTabLayout[currentLayoutTarget][varName] = v;
+        const ctrl = findPerTabControl(varName);
+        document.querySelectorAll(`[data-layout-tab="${currentLayoutTarget}"]`).forEach(scope => {
+          scope.style.setProperty(varName, v + ctrl.unit);
+        });
+        document.getElementById('val-' + varName).textContent = formatValue(v, ctrl.unit);
+      } else {
+        globalLayout[varName] = v;
+        const ctrl = findGlobalControl(varName);
+        document.documentElement.style.setProperty(varName, v + ctrl.unit);
+        document.getElementById('val-' + varName).textContent = formatValue(v, ctrl.unit);
+      }
+    });
+    input.addEventListener('change', () => persistLayout());
+  });
+  
+  container.querySelectorAll('.slider-row').forEach(row => {
+    const input = row.querySelector('input[type="range"]');
+    if (!input) return;
+    const varName = input.dataset.var;
+    const scope = input.dataset.scope;
+    const ctrl = scope === 'per-tab' ? findPerTabControl(varName) : findGlobalControl(varName);
+    if (!ctrl) return;
+    
+    const padInfo = row.dataset.highlightPad ? JSON.parse(row.dataset.highlightPad) : null;
+    
+    const activate = () => {
+      row.classList.add('hover-active');
+      if (padInfo) {
+        showPaddingHint(padInfo.page, padInfo.side);
+      } else if (ctrl.highlight) {
+        try {
+          let selector = ctrl.highlight;
+          if (scope === 'per-tab') {
+            selector = selector.split(',').map(s => `[data-layout-tab="${currentLayoutTarget}"] ${s.trim()}, [data-layout-tab="${currentLayoutTarget}"]${s.trim()}`).join(', ');
+          }
+          document.querySelectorAll(selector).forEach(el => el.classList.add('highlight-target'));
+        } catch (e) {}
+      }
+    };
+    
+    const deactivate = () => {
+      row.classList.remove('hover-active');
+      document.querySelectorAll('.highlight-target').forEach(el => el.classList.remove('highlight-target'));
+      hidePaddingHint();
+    };
+    
+    row.addEventListener('mouseenter', activate);
+    row.addEventListener('mouseleave', deactivate);
+    input.addEventListener('focus', activate);
+    input.addEventListener('blur', deactivate);
+  });
+}
+
+function showPaddingHint(pageSelector, side) {
+  hidePaddingHint();
+  const pages = document.querySelectorAll(pageSelector);
+  pages.forEach(page => {
+    const rect = page.getBoundingClientRect();
+    const cs = getComputedStyle(page);
+    const padTop = parseFloat(cs.paddingTop);
+    const padRight = parseFloat(cs.paddingRight);
+    const padBottom = parseFloat(cs.paddingBottom);
+    const padLeft = parseFloat(cs.paddingLeft);
+    
+    const create = (left, top, width, height) => {
+      const hint = document.createElement('div');
+      hint.className = 'page-padding-hint';
+      hint.style.left = left + 'px';
+      hint.style.top = top + 'px';
+      hint.style.width = width + 'px';
+      hint.style.height = height + 'px';
+      document.body.appendChild(hint);
+    };
+    
+    if (side === 'top') {
+      create(rect.left, rect.top, rect.width, padTop);
+    } else if (side === 'bottom') {
+      create(rect.left, rect.bottom - padBottom, rect.width, padBottom);
+    } else if (side === 'side') {
+      create(rect.left, rect.top + padTop, padLeft, rect.height - padTop - padBottom);
+      create(rect.right - padRight, rect.top + padTop, padRight, rect.height - padTop - padBottom);
+    }
+  });
+}
+
+function hidePaddingHint() {
+  document.querySelectorAll('.page-padding-hint').forEach(el => el.remove());
+}
+
+// ============== EXPORT PDF ==============
+async function exportPDF() {
+  const btn = document.getElementById('pdfBtn');
+  const overlay = document.getElementById('exportOverlay');
+  const overlayLabel = document.getElementById('overlayLabel');
+  const substep = document.getElementById('exportSubstep');
+  
+  btn.disabled = true;
+  overlay.classList.add('active');
+  overlayLabel.textContent = 'Сохранение PDF';
+  
+  try {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+    
+    substep.textContent = 'Подготовка страницы 1 (A4 бар + кухня)...';
+    await renderPageToPDF(pdf, 'A4', 0, 0, 210, 297);
+    
+    pdf.addPage('a4', 'portrait');
+    substep.textContent = 'Подготовка страницы 2 — крепкое (левая половина)...';
+    await renderPageToPDF(pdf, 'HALF_FRONT', 0, 0, 105, 297);
+    substep.textContent = 'Подготовка страницы 2 — коктейли (правая половина)...';
+    await renderPageToPDF(pdf, 'HALF_BACK', 105, 0, 105, 297);
+    
+    pdf.setDrawColor(180, 180, 180);
+    pdf.setLineDashPattern([1, 1], 0);
+    pdf.setLineWidth(0.1);
+    pdf.line(105, 4, 105, 293);
+    pdf.setLineDashPattern([], 0);
+    
+    substep.textContent = 'Встраивание данных для редактирования...';
+    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 15 });
+    const b64 = btoa(unescape(encodeURIComponent(stateJson)));
+    pdf.setProperties({
+      title: 'SMOKE INN — Меню',
+      subject: 'SMOKEINN_MENU_DATA::' + b64,
+      author: 'SMOKE INN editor',
+      keywords: 'smokeinn,menu,editable',
+      creator: 'SMOKE INN editor v15'
+    });
+    
+    substep.textContent = 'Сохранение файла...';
+    pdf.save('SMOKE_INN_menu.pdf');
+    
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка: ' + err.message);
+  } finally {
+    overlay.classList.remove('active');
+    btn.disabled = false;
+  }
+}
+
+async function renderPageToPDF(pdf, key, x, y, widthMM, heightMM) {
+  const host = document.getElementById('pdfHost');
+  host.innerHTML = '';
+  host.innerHTML = buildPageStaticForPDF(key);
+  const pageEl = host.querySelector('.page');
+  
+  host.querySelectorAll('[data-layout-tab]').forEach(scope => {
+    const tab = scope.dataset.layoutTab;
+    if (perTabLayout[tab]) {
+      for (const [k, v] of Object.entries(perTabLayout[tab])) {
+        const ctrl = findPerTabControl(k);
+        scope.style.setProperty(k, v + (ctrl ? ctrl.unit : 'mm'));
+      }
+    }
+  });
+  
+  await new Promise(r => setTimeout(r, 50));
+  
+  const canvas = await html2canvas(pageEl, {
+    scale: 3,
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    logging: false,
+    width: pageEl.offsetWidth,
+    height: pageEl.offsetHeight,
+    windowWidth: pageEl.offsetWidth,
+    windowHeight: pageEl.offsetHeight
+  });
+  
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  pdf.addImage(imgData, 'JPEG', x, y, widthMM, heightMM, undefined, 'FAST');
+  host.innerHTML = '';
+}
+
+function buildPageStaticForPDF(key) {
+  const tabData = data[key];
+  const isA4 = key === 'A4';
+  
+  const buildItemStatic = (item) => {
+    const itemHasVol = hasContent(item.vol);
+    const itemHasDesc = hasContent(item.desc);
+    let itemClass = 'menu-item';
+    if (itemHasVol) itemClass += ' has-vol';
+    if (itemHasDesc) itemClass += ' has-desc';
+    
+    const volPart = itemHasVol ? `<span class="item-volume">${escapeHtml(item.vol)}</span>` : '';
+    const descPart = itemHasDesc ? `<div class="item-description">${escapeHtml(item.desc)}</div>` : '';
+    return `
+      <div class="${itemClass}">
+        <div class="menu-item-row">
+          <div class="menu-item-name-wrap">
+            <span class="name">${escapeHtml(item.name)}</span>${volPart}
+          </div>
+          <span class="price">${escapeHtml(item.price)}</span>
+        </div>
+        ${descPart}
+      </div>
+    `;
+  };
+  
+  const buildSectionStatic = (s) => {
+    const sectionHasVol = hasContent(s.volume);
+    const sectionHasNote = hasContent(s.note);
+    let sectionClass = 'menu-section';
+    if (sectionHasVol) sectionClass += ' has-vol';
+    if (sectionHasNote) sectionClass += ' has-note';
+    
+    const volPart = sectionHasVol ? `<span class="menu-section-volume">${escapeHtml(s.volume)}</span>` : '';
+    const notePart = sectionHasNote ? `<div class="menu-section-note">${escapeHtml(s.note)}</div>` : '';
+    return `
+      <div class="${sectionClass}">
+        <div class="section-title-line">
+          <span class="menu-section-title">${escapeHtml(s.title)}</span>${volPart}
+        </div>
+        ${notePart}
+        <div class="menu-items">${s.items.map(buildItemStatic).join('')}</div>
+      </div>
+    `;
+  };
+  
+  const buildColumnStatic = (col, layoutTab) => 
+    `<div class="column" data-layout-tab="${layoutTab}">${col.map(buildSectionStatic).join('')}</div>`;
+  
+  const headerHTML = isA4 ? `
+    <div class="page-header">
+      <div class="logo-box">SMOKE INN</div>
+      <div class="contact-block">
+        <div class="row-1">LOUNGE &amp; BAR</div>
+        <div class="row-2">SMOKEINN.COM</div>
+        <div class="row-3">+79992273434</div>
+      </div>
+    </div>
+  ` : '';
+  
+  let columnsHTML;
+  if (isA4) {
+    columnsHTML = buildColumnStatic(tabData.columns[0], 'A4_LEFT')
+                + buildColumnStatic(tabData.columns[1], 'A4_RIGHT');
+  } else {
+    columnsHTML = buildColumnStatic(tabData.columns[0], key);
+  }
+  
+  const footerHTML = (isA4 && tabData.footer) ? `<div class="page-footer">${escapeHtml(tabData.footer)}</div>` : '';
+  const pageClass = isA4 ? 'page page-a4' : 'page page-half';
+  
+  return `
+    <div class="${pageClass}">
+      ${headerHTML}
+      <div class="content-area">${columnsHTML}</div>
+      ${footerHTML}
+    </div>
+  `;
+}
+
+// ============== IMPORT PDF ==============
+async function importPDF(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  
+  const overlay = document.getElementById('exportOverlay');
+  const overlayLabel = document.getElementById('overlayLabel');
+  const substep = document.getElementById('exportSubstep');
+  
+  overlay.classList.add('active');
+  overlayLabel.textContent = 'Импорт PDF';
+  substep.textContent = 'Чтение файла...';
+  
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    substep.textContent = 'Извлечение данных...';
+    
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const meta = await pdfDoc.getMetadata();
+    
+    let payload = null;
+    if (meta.info && meta.info.Subject) {
+      const subj = meta.info.Subject;
+      const marker = 'SMOKEINN_MENU_DATA::';
+      const idx = subj.indexOf(marker);
+      if (idx >= 0) payload = subj.substring(idx + marker.length);
+    }
+    
+    if (!payload) {
+      throw new Error('В PDF нет данных для редактирования. Импортировать можно только PDF, созданные этим редактором.');
+    }
+    
+    const stateJson = decodeURIComponent(escape(atob(payload)));
+    const state = JSON.parse(stateJson);
+    
+    if (!state.data || !state.data.A4 || !state.data.HALF_FRONT || !state.data.HALF_BACK) {
+      throw new Error('Структура данных в PDF не соответствует ожидаемой.');
+    }
+    
+    data = state.data;
+    if (state.perTabLayout) {
+      TABS.forEach(t => {
+        if (state.perTabLayout[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS, ...state.perTabLayout[t] };
+      });
+    }
+    if (state.globalLayout) globalLayout = { ...GLOBAL_DEFAULTS, ...state.globalLayout };
+    
+    persistData();
+    persistLayout();
+    
+    substep.textContent = 'Восстановление редактора...';
+    renderPage();
+    renderControlsPanel();
+    
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      alert('PDF успешно импортирован. Все позиции и настройки восстановлены.');
+    }, 300);
+    
+  } catch (err) {
+    console.error(err);
+    overlay.classList.remove('active');
+    alert('Ошибка импорта: ' + err.message);
+  }
+}
+
+// ============== INIT ==============
+applyLayout();
+renderPage();
+renderControlsPanel();
+</script>
+
+</body>
+</html>
