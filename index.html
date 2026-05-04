@@ -1462,16 +1462,16 @@ const PER_TAB_CONTROLS = [
     { var: '--size-section-title',  label: 'Заголовок секции',   unit: 'pt', min: 9,  max: 22, step: 0.5, default: 15,  highlight: '.menu-section-title' },
     { var: '--size-section-volume', label: 'Объём у заголовка',  unit: 'pt', min: 4,  max: 12, step: 0.5, default: 8,   highlight: '.menu-section.has-vol .menu-section-volume' },
     { var: '--size-section-note',   label: 'Примечание секции',  unit: 'pt', min: 4,  max: 12, step: 0.5, default: 7,   highlight: '.menu-section.has-note .menu-section-note' },
-    { var: '--size-item-name',      label: 'Название позиции',   unit: 'pt', min: 6,  max: 14, step: 0.5, default: 9.5, highlight: '.menu-item .name' },
-    { var: '--size-item-volume',    label: 'Объём у позиции',    unit: 'pt', min: 4,  max: 10, step: 0.5, default: 6.8, highlight: '.menu-item.has-vol .item-volume' },
-    { var: '--size-item-price',     label: 'Цена',               unit: 'pt', min: 6,  max: 14, step: 0.5, default: 9.5, highlight: '.menu-item .price' },
-    { var: '--size-item-desc',      label: 'Описание позиции',   unit: 'pt', min: 4,  max: 12, step: 0.5, default: 7.8, highlight: '.menu-item.has-desc .item-description' }
+    { var: '--size-item-name',      label: 'Название позиции',   unit: 'pt', min: 6,  max: 14, step: 0.5, default: 9,   highlight: '.menu-item .name' },
+    { var: '--size-item-volume',    label: 'Объём у позиции',    unit: 'pt', min: 4,  max: 10, step: 0.1, default: 6.8, highlight: '.menu-item.has-vol .item-volume' },
+    { var: '--size-item-price',     label: 'Цена',               unit: 'pt', min: 6,  max: 14, step: 0.5, default: 9,   highlight: '.menu-item .price' },
+    { var: '--size-item-desc',      label: 'Описание позиции',   unit: 'pt', min: 4,  max: 12, step: 0.5, default: 7.5, highlight: '.menu-item.has-desc .item-description' }
   ]},
   { group: 'ОТСТУПЫ — СЕКЦИИ', controls: [
-    { var: '--gap-sections',       label: 'Между секциями',                  unit: 'mm', min: 0, max: 14, step: 0.5, default: 6,   highlight: '.column' },
+    { var: '--gap-sections',       label: 'Между секциями',                  unit: 'mm', min: 0, max: 14, step: 0.1, default: 6,   highlight: '.column' },
     { var: '--gap-title-to-note',  label: 'Заголовок → примечание',          unit: 'mm', min: 0, max: 6,  step: 0.1, default: 1.5, highlight: '.menu-section.has-note .section-title-line' },
-    { var: '--gap-title-to-items', label: 'Заголовок → позиции (без прим.)', unit: 'mm', min: 0, max: 6,  step: 0.1, default: 2.0, highlight: '.menu-section:not(.has-note) .section-title-line' },
-    { var: '--gap-note-to-items',  label: 'Примечание → позиции',            unit: 'mm', min: 0, max: 6,  step: 0.1, default: 2.0, highlight: '.menu-section.has-note .menu-section-note' }
+    { var: '--gap-title-to-items', label: 'Заголовок → позиции (без прим.)', unit: 'mm', min: 0, max: 8,  step: 0.1, default: 2.0, highlight: '.menu-section:not(.has-note) .section-title-line' },
+    { var: '--gap-note-to-items',  label: 'Примечание → позиции',            unit: 'mm', min: 0, max: 8,  step: 0.1, default: 2.0, highlight: '.menu-section.has-note .menu-section-note' }
   ]},
   { group: 'ОТСТУПЫ — ПОЗИЦИИ', controls: [
     { var: '--gap-items',         label: 'Между позициями',                 unit: 'mm', min: 0, max: 5,  step: 0.1,  default: 0.8,  highlight: '.menu-item:not(.has-desc) + .menu-item:not(.has-desc)' },
@@ -1482,7 +1482,7 @@ const PER_TAB_CONTROLS = [
 
 const GLOBAL_CONTROLS = [
   { group: 'ТИПОГРАФИКА', controls: [
-    { var: '--tracking',          label: 'Межбуквенный (трекинг)',     unit: 'em', min: 0,    max: 0.2, step: 0.01, default: 0,  highlight: '.menu-section-title, .menu-item .name, .menu-item .price' },
+    { var: '--tracking',          label: 'Межбуквенный (трекинг)',     unit: 'em', min: 0,    max: 0.2, step: 0.01, default: 0.15, highlight: '.menu-section-title, .menu-item .name, .menu-item .price' },
     { var: '--size-footer',       label: 'Подвал страницы',            unit: 'pt', min: 5,    max: 14,  step: 0.5,  default: 8,  highlight: '.page-footer' }
   ]},
   { group: 'СТРАНИЦА — ОТСТУПЫ', controls: [
@@ -1504,18 +1504,63 @@ const GLOBAL_CONTROLS = [
 
 const TABS = ['A4_LEFT', 'A4_RIGHT', 'HALF_FRONT', 'HALF_BACK'];
 
+// Universal fallback (used when adding new vars)
 const PER_TAB_DEFAULTS = {};
 PER_TAB_CONTROLS.forEach(g => g.controls.forEach(c => { PER_TAB_DEFAULTS[c.var] = c.default; }));
 const GLOBAL_DEFAULTS = {};
 GLOBAL_CONTROLS.forEach(g => g.controls.forEach(c => { GLOBAL_DEFAULTS[c.var] = c.default; }));
 
+// Per-tab default overrides — calibrated values for each layout target
+const PER_TAB_DEFAULTS_BY_TAB = {
+  'A4_LEFT': {
+    ...PER_TAB_DEFAULTS,
+    '--gap-sections':       4.5,
+    '--gap-title-to-note':  1.5,
+    '--gap-title-to-items': 2.0,
+    '--gap-note-to-items':  2.0,
+    '--gap-items':          0.8,
+    '--gap-items-desc':     1.6,
+    '--gap-name-to-desc':   0.25
+  },
+  'A4_RIGHT': {
+    ...PER_TAB_DEFAULTS,
+    '--gap-sections':       8.0,
+    '--gap-title-to-note':  1.5,
+    '--gap-title-to-items': 2.0,
+    '--gap-note-to-items':  2.0,
+    '--gap-items':          0.8,
+    '--gap-items-desc':     4.5,
+    '--gap-name-to-desc':   0.30
+  },
+  'HALF_FRONT': {
+    ...PER_TAB_DEFAULTS,
+    '--gap-sections':       9.0,
+    '--gap-title-to-note':  1.5,
+    '--gap-title-to-items': 3.2,
+    '--gap-note-to-items':  2.1,
+    '--gap-items':          2.6,
+    '--gap-items-desc':     1.6,
+    '--gap-name-to-desc':   0.25
+  },
+  'HALF_BACK': {
+    ...PER_TAB_DEFAULTS,
+    '--gap-sections':       14.0,
+    '--gap-title-to-note':  1.7,
+    '--gap-title-to-items': 5.6,
+    '--gap-note-to-items':  6.0,
+    '--gap-items':          3.9,
+    '--gap-items-desc':     6.9,
+    '--gap-name-to-desc':   0.25
+  }
+};
+
 // ============== STATE ==============
 let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
 let perTabLayout = {
-  'A4_LEFT':    { ...PER_TAB_DEFAULTS },
-  'A4_RIGHT':   { ...PER_TAB_DEFAULTS },
-  'HALF_FRONT': { ...PER_TAB_DEFAULTS },
-  'HALF_BACK':  { ...PER_TAB_DEFAULTS }
+  'A4_LEFT':    { ...PER_TAB_DEFAULTS_BY_TAB['A4_LEFT'] },
+  'A4_RIGHT':   { ...PER_TAB_DEFAULTS_BY_TAB['A4_RIGHT'] },
+  'HALF_FRONT': { ...PER_TAB_DEFAULTS_BY_TAB['HALF_FRONT'] },
+  'HALF_BACK':  { ...PER_TAB_DEFAULTS_BY_TAB['HALF_BACK'] }
 };
 let globalLayout = { ...GLOBAL_DEFAULTS };
 let currentPage = 'A4';
@@ -1523,30 +1568,30 @@ let currentLayoutTarget = 'A4_LEFT';
 let zoom = 0.7;
 
 try {
-  const savedData = localStorage.getItem('smokeinn_v15_data');
+  const savedData = localStorage.getItem('smokeinn_v16_data');
   if (savedData) {
     const loaded = JSON.parse(savedData);
     if (loaded.A4 && loaded.HALF_FRONT && loaded.HALF_BACK) data = loaded;
   }
-  const savedPerTab = localStorage.getItem('smokeinn_v15_perTab');
+  const savedPerTab = localStorage.getItem('smokeinn_v16_perTab');
   if (savedPerTab) {
     const loaded = JSON.parse(savedPerTab);
     TABS.forEach(t => {
-      if (loaded[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS, ...loaded[t] };
+      if (loaded[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS_BY_TAB[t], ...loaded[t] };
     });
   }
-  const savedGlobal = localStorage.getItem('smokeinn_v15_global');
+  const savedGlobal = localStorage.getItem('smokeinn_v16_global');
   if (savedGlobal) {
     const loaded = JSON.parse(savedGlobal);
     globalLayout = { ...GLOBAL_DEFAULTS, ...loaded };
   }
 } catch (e) {}
 
-function persistData() { try { localStorage.setItem('smokeinn_v15_data', JSON.stringify(data)); } catch (e) {} }
+function persistData() { try { localStorage.setItem('smokeinn_v16_data', JSON.stringify(data)); } catch (e) {} }
 function persistLayout() {
   try {
-    localStorage.setItem('smokeinn_v15_perTab', JSON.stringify(perTabLayout));
-    localStorage.setItem('smokeinn_v15_global', JSON.stringify(globalLayout));
+    localStorage.setItem('smokeinn_v16_perTab', JSON.stringify(perTabLayout));
+    localStorage.setItem('smokeinn_v16_global', JSON.stringify(globalLayout));
   } catch (e) {}
 }
 
@@ -1593,7 +1638,7 @@ function findGlobalControl(varName) {
 
 function resetLayoutDefaults() {
   if (!confirm('Сбросить все настройки макета к значениям по умолчанию?')) return;
-  TABS.forEach(t => { perTabLayout[t] = { ...PER_TAB_DEFAULTS }; });
+  TABS.forEach(t => { perTabLayout[t] = { ...PER_TAB_DEFAULTS_BY_TAB[t] }; });
   globalLayout = { ...GLOBAL_DEFAULTS };
   persistLayout();
   applyLayout();
@@ -2049,14 +2094,14 @@ async function exportPDF() {
     pdf.setLineDashPattern([], 0);
     
     substep.textContent = 'Встраивание данных для редактирования...';
-    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 15 });
+    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 16 });
     const b64 = btoa(unescape(encodeURIComponent(stateJson)));
     pdf.setProperties({
       title: 'SMOKE INN — Меню',
       subject: 'SMOKEINN_MENU_DATA::' + b64,
       author: 'SMOKE INN editor',
       keywords: 'smokeinn,menu,editable',
-      creator: 'SMOKE INN editor v15'
+      creator: 'SMOKE INN editor v16'
     });
     
     substep.textContent = 'Сохранение файла...';
@@ -2232,7 +2277,7 @@ async function importPDF(event) {
     data = state.data;
     if (state.perTabLayout) {
       TABS.forEach(t => {
-        if (state.perTabLayout[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS, ...state.perTabLayout[t] };
+        if (state.perTabLayout[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS_BY_TAB[t], ...state.perTabLayout[t] };
       });
     }
     if (state.globalLayout) globalLayout = { ...GLOBAL_DEFAULTS, ...state.globalLayout };
