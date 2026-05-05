@@ -334,27 +334,165 @@ html, body {
   padding: var(--pad-page-half-top) var(--pad-page-half-side) var(--pad-page-half-bottom);
 }
 
-/* ============== A4 BACK (logo only) ============== */
+/* ============== A4 BACK (cover side of folded booklet) ==============
+   The A4 sheet is folded along its long axis (vertical fold).
+   The RIGHT half (105mm) becomes the front cover when folded inward.
+   Layout: logo + "меню" word at the top of the right half,
+   QR code placeholder at the bottom-right corner. */
 .page-a4-back {
   width: 210mm;
   min-height: 297mm;
-  padding: 30mm;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.page-a4-back .a4-back-fold-line {
+  position: absolute;
+  top: 4mm;
+  bottom: 4mm;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 0.5pt dashed #b8b8b8;
+  pointer-events: none;
+}
+
+.page-a4-back .left-half {
+  /* Empty — this becomes the inside of the folded booklet */
+}
+
+.page-a4-back .right-half {
   display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: relative;
+}
+
+/* Logo block is rotated -90deg so when the A4 sheet is folded along its
+   long axis (vertical fold), the booklet cover reads horizontally.
+   The block is absolutely positioned in the upper portion of right half. */
+.page-a4-back .cover-logo-block {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center center;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 6mm;
+  /* When rotated, this becomes the "tall" dimension on the page.
+     Center it visually by offsetting upward (toward the top of the cover). */
+  margin-top: -55mm;
 }
 
 .page-a4-back .logo-large {
   display: inline-flex;
   align-items: center;
-  padding: 5mm 10mm;
-  border: 1.6pt solid #0a0a0a;
+  padding: 7mm 14mm;
+  border: 2pt solid #0a0a0a;
   font-weight: 700;
-  font-size: 22pt;
+  font-size: 32pt;
   letter-spacing: 0.06em;
   color: #0a0a0a;
   line-height: 1;
   white-space: nowrap;
+  outline: none;
+}
+
+.page-a4-back .cover-subtitle {
+  font-size: 13pt;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  color: #0a0a0a;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.page-a4-back .qr-block {
+  position: absolute;
+  bottom: 22mm;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3mm;
+}
+
+.page-a4-back .qr-placeholder {
+  width: 35mm;
+  height: 35mm;
+  background: #f5f5f5;
+  border: 0.7pt dashed #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 7pt;
+  letter-spacing: 0.08em;
+  color: #888;
+  text-transform: uppercase;
+  font-style: italic;
+  line-height: 1.3;
+  padding: 2mm;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-a4-back .qr-placeholder:hover {
+  background: #ececec;
+  border-color: #666;
+}
+
+.page-a4-back .qr-placeholder.has-image {
+  background: white;
+  border: none;
+  padding: 0;
+}
+
+.page-a4-back .qr-placeholder.has-image::before {
+  content: "";
+}
+
+.page-a4-back .qr-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Hover overlay to replace QR image */
+.page-a4-back .qr-placeholder.has-image .qr-replace-hint {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  font-size: 7pt;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  font-style: normal;
+}
+
+.page-a4-back .qr-placeholder.has-image:hover .qr-replace-hint {
+  opacity: 1;
+}
+
+.page-a4-back .qr-caption {
+  font-size: 7pt;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: #555;
+  text-transform: uppercase;
+  text-align: center;
   outline: none;
 }
 
@@ -366,6 +504,9 @@ html, body {
   min-height: 297mm;
   overflow: hidden;
 }
+
+/* Hide fold line in PDF */
+.pdf-render-host .a4-back-fold-line { display: none !important; }
 
 /* ============== A4 OVERFLOW CUTOFF MARKER ==============
    When content extends past 297mm (the real A4 height), show a
@@ -432,11 +573,11 @@ html, body {
 .logo-box {
   display: inline-flex;
   align-items: center;
-  padding: 3.5mm 6mm;
-  border: 1.4pt solid #0a0a0a;
+  padding: 5mm 9mm;
+  border: 1.6pt solid #0a0a0a;
   font-weight: 700;
-  font-size: 16pt;
-  letter-spacing: 0.05em;
+  font-size: 22pt;
+  letter-spacing: 0.06em;
   color: #0a0a0a;
   line-height: 1;
   white-space: nowrap;
@@ -448,7 +589,7 @@ html, body {
   flex-direction: column;
   align-items: flex-end;
   text-align: right;
-  font-size: 8.5pt;
+  font-size: 9.5pt;
   line-height: 1.4;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -1765,19 +1906,18 @@ const DEFAULT_DATA = {
           { name: 'СИДР', vol: '', price: 'ОТ 490', desc: '' }
         ]},
         { title: 'НАПИТКИ Б/А', volume: '', note: '', items: [
-          { name: 'АВТОРСКИЙ ЛИМОНАД', vol: '400МЛ/1Л', price: '390/650', desc: '' },
-          { name: 'COCA-COLA/FANTA/SPRITE', vol: '330МЛ', price: '240', desc: '' },
-          { name: 'RED BULL', vol: '330МЛ', price: '290', desc: '' },
-          { name: 'ADRENALINE', vol: '500МЛ', price: '290', desc: '' },
-          { name: 'НАТАХТАРИ', vol: '500МЛ', price: '290', desc: '' },
+          { name: 'АВТОРСКИЙ ЛИМОНАД', vol: '400МЛ/1Л', price: '390/690', desc: '' },
+          { name: 'COCA-COLA/FANTA/SPRITE', vol: '330МЛ', price: '290', desc: '' },
+          { name: 'RED BULL', vol: '330МЛ', price: '390', desc: '' },
+          { name: 'НАТАХТАРИ', vol: '500МЛ', price: '390', desc: '' },
           { name: 'BORJOMI', vol: '500МЛ', price: '290', desc: '' },
-          { name: 'ВОДА Б/Г MEVER', vol: '500МЛ', price: '190', desc: '' }
+          { name: 'ВОДА Б/Г MEVER', vol: '500МЛ', price: '290', desc: '' }
         ]},
         { title: 'ЧАИ', volume: '600МЛ', note: 'ЛИСТОВЫЕ ЧАИ: ПУЭРЫ, УЛУНЫ, ЗЕЛЁНЫЕ, ЧЁРНЫЕ, КРАСНЫЕ И ФРУКТОВЫЕ', items: [
           { name: 'ОБЛЕПИХОВЫЙ', vol: '', price: '590', desc: '' },
-          { name: 'ВИШНЁВЫЙ ПУЭР', vol: '', price: '590', desc: '' },
-          { name: 'ЯГОДНЫЙ', vol: '', price: '550', desc: '' },
-          { name: 'ВИТАМИННЫЙ', vol: '', price: '550', desc: '' },
+          { name: 'ВИШНЁВЫЙ ПУЭР', vol: '', price: '650', desc: '' },
+          { name: 'ЯГОДНЫЙ', vol: '', price: '590', desc: '' },
+          { name: 'ВИТАМИННЫЙ', vol: '', price: '650', desc: '' },
           { name: 'ЦИТРУСОВЫЙ', vol: '', price: '590', desc: '' },
           { name: 'ГАБА', vol: '', price: '550', desc: '' },
           { name: 'ЛИСТОВОЙ', vol: '', price: '300', desc: '' }
@@ -1786,39 +1926,40 @@ const DEFAULT_DATA = {
           { name: 'АМЕРИКАНО', vol: '150МЛ', price: '200', desc: '' },
           { name: 'ЭСПРЕССО', vol: '30МЛ', price: '200', desc: '' },
           { name: 'ЛАТТЕ', vol: '300МЛ', price: '350', desc: '' },
-          { name: 'РАФ', vol: '300МЛ', price: '400', desc: '' },
-          { name: 'БАМБЛ', vol: '350МЛ', price: '350', desc: '' }
+          { name: 'КАПУЧИНО', vol: '250МЛ', price: '290', desc: '' },
+          { name: 'РАФ', vol: '250МЛ', price: '400', desc: '' },
+          { name: 'БАМБЛ', vol: '300МЛ', price: '390', desc: '' }
         ]},
         { title: 'ДЕСЕРТЫ', volume: '', note: '', items: [
-          { name: 'ШОКОЛАДНЫЙ ФОНДАН', vol: '', price: '490', desc: 'С ШАРИКОМ ВАНИЛЬНОГО МОРОЖЕНОГО' },
+          { name: 'ШОКОЛАДНЫЙ ФОНДАН', vol: '', price: '590', desc: 'С ШАРИКОМ ВАНИЛЬНОГО МОРОЖЕНОГО' },
           { name: 'ДОМАШНИЕ СЫРНИКИ', vol: '', price: '390', desc: 'СО СГУЩЁНКОЙ' },
-          { name: 'МОРОЖЕНОЕ', vol: '', price: '150', desc: 'ВАНИЛЬНОЕ / ШОКОЛАДНОЕ, 1 ШАРИК, 50 ГР' }
+          { name: 'МОРОЖЕНОЕ', vol: '', price: '190', desc: 'ВАНИЛЬНОЕ / ШОКОЛАДНОЕ, 1 ШАРИК, 50 ГР' }
         ]}
       ],
       [
         { title: 'ЗАКУСКИ', volume: '', note: 'ПОДАЮТСЯ С СОУСОМ НА ВЫБОР: СЫРНЫЙ, БАРБЕКЮ, КЕТЧУП, СПАЙСИ, ЦЕЗАРЬ, АЙОЛИ БАЗИЛИК, ТЕРИЯКИ', items: [
-          { name: 'КРЕВЕТКИ', vol: '', price: '690', desc: '' },
-          { name: 'КОЛЬЦА КАЛЬМАРА', vol: '', price: '690', desc: '' },
-          { name: 'ЛУКОВЫЕ КОЛЬЦА', vol: '', price: '390', desc: '' },
+          { name: 'КРЕВЕТКИ', vol: '', price: '590', desc: '' },
+          { name: 'КОЛЬЦА КАЛЬМАРА', vol: '', price: '590', desc: '' },
+          { name: 'ЛУКОВЫЕ КОЛЬЦА', vol: '', price: '490', desc: '' },
           { name: 'СЫРНЫЕ ПАЛОЧКИ', vol: '', price: '490', desc: '' },
-          { name: 'НАГГЕТСЫ', vol: '', price: '390', desc: '' },
-          { name: 'КАРТОФЕЛЬ ФРИ', vol: '', price: '290', desc: '' },
-          { name: 'БАТАТ ФРИ', vol: '', price: '390', desc: '' },
-          { name: 'НАЧОС', vol: '', price: '390', desc: '' },
+          { name: 'НАГГЕТСЫ', vol: '', price: '490', desc: '' },
+          { name: 'КАРТОФЕЛЬ ФРИ', vol: '', price: '350', desc: '' },
+          { name: 'БАТАТ ФРИ', vol: '', price: '450', desc: '' },
+          { name: 'НАЧОС', vol: '', price: '350', desc: '' },
           { name: 'ФИСТАШКИ', vol: '', price: '390', desc: '' }
         ]},
         { title: 'САЛАТЫ', volume: '', note: '', items: [
           { name: 'ГРЕЧЕСКИЙ', vol: '', price: '590', desc: 'БРЫНЗА, ПОМИДОРЫ, ОГУРЕЦ СВЕЖИЙ, ОЛИВКИ, МАСЛИНЫ, ПЕРЕЦ БОЛГАРСКИЙ, ОЛИВКОВОЕ МАСЛО, ПРОВАНСКИЕ ТРАВЫ' },
-          { name: 'ЗЕЛЁНЫЙ', vol: '', price: '550', desc: 'МИКС САЛАТ, ОГУРЕЦ СВЕЖИЙ, КРЕМ БРОККОЛИ, ТЫКВЕННЫЕ СЕМЕЧКИ, ОРЕХ КЕДРОВЫЙ, МАСЛО ОЛИВКОВОЕ' },
+          { name: 'ЗЕЛЁНЫЙ', vol: '', price: '590', desc: 'МИКС САЛАТ, ОГУРЕЦ СВЕЖИЙ, КРЕМ БРОККОЛИ, ТЫКВЕННЫЕ СЕМЕЧКИ, ОРЕХ КЕДРОВЫЙ, МАСЛО ОЛИВКОВОЕ' },
           { name: 'ЦЕЗАРЬ С КУРИЦЕЙ', vol: '', price: '690', desc: 'КУРИНАЯ ГРУДКА, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' },
-          { name: 'ЦЕЗАРЬ С КРЕВЕТКАМИ', vol: '', price: '890', desc: 'КРЕВЕТКИ, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' }
+          { name: 'ЦЕЗАРЬ С КРЕВЕТКАМИ', vol: '', price: '790', desc: 'КРЕВЕТКИ, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' }
         ]},
         { title: 'ГОРЯЧЕЕ', volume: '', note: 'К КАЖДОМУ БЛЮДУ ПОДАЁТСЯ МИКС-САЛАТ И КАРТОШКА ФРИ / БАТАТ ФРИ НА ВЫБОР ГОСТЯ', items: [
           { name: 'БОЛОНЬЕЗЕ А-ЛЯ МЕКСИКА', vol: '', price: '690', desc: 'ФАРШ ГОВЯДИНА, ТОМАТНАЯ ПАСТА, ХЛОПЬЯ ЧИЛИ, КИНЗА, СЫЧУАНЬСКИЙ ПЕРЕЦ' },
           { name: 'КУРИЦА ПО-ТАЙСКИ', vol: '', price: '590', desc: 'КУРИНАЯ ГРУДКА, СПАЙСИ СОУС, ТЕРИЯКИ СОУС, КУНЖУТ, КИНЗА' },
-          { name: 'БЕФСТРОГАНОВ', vol: '', price: '750', desc: 'ГОВЯДИНА, СЛИВКИ, ЛУК РЕПЧАТЫЙ, ШАМПИНЬОНЫ, ПЕРЕЦ ГОРОШЕК, СЛИВОЧНОЕ МАСЛО, МАРИНОВАННЫЕ ОГУРЦЫ' },
+          { name: 'БЕФСТРОГАНОВ', vol: '', price: '690', desc: 'ГОВЯДИНА, СЛИВКИ, ЛУК РЕПЧАТЫЙ, ШАМПИНЬОНЫ, ПЕРЕЦ ГОРОШЕК, СЛИВОЧНОЕ МАСЛО, МАРИНОВАННЫЕ ОГУРЦЫ' },
           { name: 'ПАРМЕЗАН БАЗИЛИК', vol: '', price: '590', desc: 'АЙОЛИ БАЗИЛИК, БАЗИЛИК, ТОМАТНЫЙ СОУС, ПАРМЕЗАН' },
-          { name: 'ЦЕЗАРЬ ПОЛО', vol: '', price: '690', desc: 'КУРИНОЕ ФИЛЕ, СОУС ЦЕЗАРЬ, ЧЕРРИ, ПАРМЕЗАН' }
+          { name: 'ЦЕЗАРЬ ПОЛО', vol: '', price: '590', desc: 'КУРИНОЕ ФИЛЕ, СОУС ЦЕЗАРЬ, ЧЕРРИ, ПАРМЕЗАН' }
         ]}
       ]
     ],
@@ -1826,33 +1967,33 @@ const DEFAULT_DATA = {
   },
   HALF_FRONT: {
     columns: [[
-      { title: 'ВОДКА', volume: '40МЛ', note: '', items: [
-        { name: 'ЦАРСКАЯ', vol: '', price: '220', desc: '' },
+      { title: 'ВОДКА', volume: '40 МЛ', note: '', items: [
         { name: 'ABSOLUT', vol: '', price: '290', desc: '' },
-        { name: 'BELUGA', vol: '', price: '350', desc: '' }
+        { name: 'BELUGA', vol: '', price: '390', desc: '' },
+        { name: 'ЧИСТЫЕ РОСЫ', vol: '', price: '490', desc: '' }
       ]},
-      { title: 'ВИСКИ', volume: '40МЛ', note: '', items: [
-        { name: 'JIM BEAM BOURBON', vol: '', price: '350', desc: '' },
-        { name: 'JIM BEAM APPLE/CHERRY', vol: '', price: '390', desc: '' },
-        { name: 'JACK DANIELS', vol: '', price: '450', desc: '' },
-        { name: 'JAMESON', vol: '', price: '390', desc: '' },
+      { title: 'ВИСКИ', volume: '40 МЛ', note: '', items: [
+        { name: 'JIM BEAM BOURBON', vol: '', price: '450', desc: '' },
+        { name: 'JIM BEAM APPLE/CHERRY', vol: '', price: '490', desc: '' },
+        { name: 'JACK DANIELS', vol: '', price: '590', desc: '' },
+        { name: 'JAMESON', vol: '', price: '490', desc: '' },
+        { name: 'CHIVAS REGAL 12 Y.O.', vol: '', price: '690', desc: '' },
         { name: 'AUCHENTOSHAN', vol: '', price: '790', desc: '' }
       ]},
-      { title: 'ТЕКИЛА', volume: '40МЛ', note: '', items: [
-        { name: 'AGAVITA SILVER', vol: '', price: '450', desc: '' },
-        { name: 'OLMECA GOLD', vol: '', price: '450', desc: '' }
+      { title: 'ТЕКИЛА', volume: '40 МЛ', note: '', items: [
+        { name: 'LEY BLANCO', vol: '', price: '490', desc: '' },
+        { name: 'LEY ANEJO', vol: '', price: '550', desc: '' }
       ]},
-      { title: 'РОМ', volume: '40МЛ', note: '', items: [
-        { name: 'BARCELO BLANCO', vol: '', price: '350', desc: '' },
-        { name: 'PLANTATION BLANCO', vol: '', price: '450', desc: '' },
-        { name: 'OAKHEART ORIGINAL', vol: '', price: '390', desc: '' }
+      { title: 'РОМ', volume: '40 МЛ', note: '', items: [
+        { name: 'BARCELO BLANCO', vol: '', price: '390', desc: '' },
+        { name: 'OAKHEART ORIGINAL SPICED', vol: '', price: '390', desc: '' },
+        { name: 'PLANTATION ORIGINAL DARK', vol: '', price: '490', desc: '' }
       ]},
-      { title: 'ДЖИН', volume: '40МЛ', note: '', items: [
-        { name: 'GORDONS', vol: '', price: '390', desc: '' },
-        { name: 'HENDRICKS', vol: '', price: '690', desc: '' },
-        { name: 'ROKU', vol: '', price: '720', desc: '' }
+      { title: 'ДЖИН', volume: '40 МЛ', note: '', items: [
+        { name: 'GORDONS', vol: '', price: '490', desc: '' },
+        { name: 'HENDRICKS', vol: '', price: '790', desc: '' }
       ]},
-      { title: 'ШОТЫ', volume: '40МЛ', note: '', items: [
+      { title: 'ШОТЫ', volume: '50 МЛ', note: '', items: [
         { name: 'Б-52', vol: '', price: '490', desc: '' },
         { name: 'ОБЛАКА', vol: '', price: '490', desc: '' },
         { name: 'БОЯРСКИЙ', vol: '', price: '490', desc: '' },
@@ -1867,27 +2008,33 @@ const DEFAULT_DATA = {
   HALF_BACK: {
     columns: [[
       { title: 'АВТОРСКИЕ КОКТЕЙЛИ', volume: '', note: 'НАШ БАРМЕН МОЖЕТ ПРИГОТОВИТЬ ЛЮБОЙ КОКТЕЙЛЬ ИСХОДЯ ИЗ ВАШИХ ВКУСОВЫХ ПРЕДПОЧТЕНИЙ', items: [
-        { name: 'SMOKE INN SIGNATURE', vol: '300МЛ', price: '690', desc: 'БУРБОН, ДОМАШНИЙ ЯБЛОЧНЫЙ СИРОП, ДЫМОК ИЗ ЯБЛОНЕВОЙ ЩЕПЫ, БИТТЕР' },
-        { name: 'SMOKY OLD FASHIONED', vol: '200МЛ', price: '690', desc: 'ВИСКИ, ТРОСТНИКОВЫЙ САХАР, АНГОСТУРА, КОПЧЁНАЯ КОРКА АПЕЛЬСИНА' },
-        { name: 'INN SOUR', vol: '250МЛ', price: '590', desc: 'БУРБОН, ЛИМОННЫЙ СОК, БЕЛОК, САХАРНЫЙ СИРОП, БИТТЕР' },
-        { name: 'LOUNGE SPRITZ', vol: '300МЛ', price: '590', desc: 'АПЕРОЛЬ, ИГРИСТОЕ, СОДОВАЯ, АПЕЛЬСИН, МЯТА' },
-        { name: 'ВОСТОЧНАЯ СКАЗКА', vol: '250МЛ', price: '650', desc: 'ДЖИН, РОЗОВАЯ ВОДА, ЛАЙМ, ГРАНАТОВЫЙ СИРОП, КАРДАМОН' }
+        { name: 'ТОКСИК', vol: '120 МЛ', price: '690', desc: 'РОМ, ПЮРЕ МАРАКУЙЯ, СИРОП МАКАДАМИЯ, ЛИМОН' },
+        { name: 'ФЕЙК', vol: '120 МЛ', price: '690', desc: 'ВОДКА, ХАЛВА, ЛИКЕР КОФЕ, СЛИВКИ' },
+        { name: 'КРИНЖОВНИК', vol: '130 МЛ', price: '750', desc: 'ТЕКИЛА, КРЫЖОВНИК, МЁД АЛОЭ, ЛАЙМ' },
+        { name: 'РЕД ФЛАГ', vol: '180 МЛ', price: '750', desc: 'АПЕРОЛЬ НА ГИБИСКУСЕ, ДЖИН, ПЮРЕ МАЛИНА, ЛИМОН' },
+        { name: 'ДЕДЛАЙН', vol: '180 МЛ', price: '790', desc: 'НАСТОЙКА ЧЕРНОПЛОДКИ, РОМАШКОВЫЙ ВЕРМУТ, СИРОП БУЗИНЫ, ИГРИСТОЕ' },
+        { name: 'ДУШНЫЙ ПУНШ', vol: '110 МЛ', price: '790', desc: 'ДЖИН, МУССКАТНЫЙ БИТТЕР, СУХОЙ ВЕРМУТ, ПЮРЕ КАЛАМАНСИ' }
       ]},
       { title: 'КЛАССИЧЕСКИЕ КОКТЕЙЛИ', volume: '', note: '', items: [
-        { name: 'НЕГРОНИ', vol: '250МЛ', price: '690', desc: '' },
-        { name: 'КРОВАВАЯ МЭРИ', vol: '350МЛ', price: '590', desc: '' },
-        { name: 'МАРГАРИТА', vol: '120МЛ', price: '620', desc: '' },
-        { name: 'ДАЙКИРИ', vol: '120МЛ', price: '590', desc: '' },
-        { name: 'ГИМЛЕТ', vol: '120МЛ', price: '590', desc: '' },
-        { name: 'ЛОНГ АЙЛЕНД', vol: '350МЛ', price: '750', desc: '' },
-        { name: 'БЕЛЫЙ РУССКИЙ', vol: '250МЛ', price: '590', desc: '' },
-        { name: 'ВИСКИ САУЭР', vol: '250МЛ', price: '590', desc: '' },
-        { name: 'МОХИТО', vol: '300МЛ', price: '590', desc: '' },
-        { name: 'ПИНА КОЛАДА', vol: '300МЛ', price: '590', desc: '' },
-        { name: 'АПЕРОЛЬ СПРИТЦ', vol: '300МЛ', price: '590', desc: '' },
-        { name: 'ЭСПРЕССО МАРТИНИ', vol: '120МЛ', price: '590', desc: '' }
+        { name: 'ДАЙКИРИ', vol: '100 МЛ', price: '550', desc: '' },
+        { name: 'ТЕКИЛА САНРАЙЗ', vol: '220 МЛ', price: '550', desc: '' },
+        { name: 'МАРГАРИТА', vol: '100 МЛ', price: '590', desc: '' },
+        { name: 'БЕЛАЯ ЛЕДИ', vol: '100 МЛ', price: '590', desc: '' },
+        { name: 'КЛОВЕР КЛАБ', vol: '120 МЛ', price: '590', desc: '' },
+        { name: 'КОСМОПОЛИТЕН', vol: '120 МЛ', price: '590', desc: '' },
+        { name: 'БЕЛЫЙ РУССКИЙ', vol: '90 МЛ', price: '590', desc: '' },
+        { name: 'КРОВАВАЯ МЭРИ', vol: '220 МЛ', price: '590', desc: '' },
+        { name: 'ВИСКИ САУЭР', vol: '120 МЛ', price: '690', desc: '' },
+        { name: 'НЕГРОНИ', vol: '90 МЛ', price: '750', desc: '' },
+        { name: 'АПЕРОЛЬ СПРИТЦ', vol: '220 МЛ', price: '750', desc: '' },
+        { name: 'ПОРНСТАР МАРТИНИ', vol: '180 МЛ', price: '750', desc: '' },
+        { name: 'МАЙ ТАЙ', vol: '120 МЛ', price: '750', desc: '' },
+        { name: 'ЛОНГ АЙЛЕНД', vol: '220 МЛ', price: '890', desc: '' }
       ]}
     ]]
+  },
+  A4_BACK: {
+    qrImage: 'data:image/jpeg;base64,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'
   }
 };
 
@@ -2006,30 +2153,30 @@ let currentLayoutTarget = 'A4_LEFT';
 let zoom = 0.7;
 
 try {
-  const savedData = localStorage.getItem('smokeinn_v21_data');
+  const savedData = localStorage.getItem('smokeinn_v23_data');
   if (savedData) {
     const loaded = JSON.parse(savedData);
     if (loaded.A4 && loaded.HALF_FRONT && loaded.HALF_BACK) data = loaded;
   }
-  const savedPerTab = localStorage.getItem('smokeinn_v21_perTab');
+  const savedPerTab = localStorage.getItem('smokeinn_v23_perTab');
   if (savedPerTab) {
     const loaded = JSON.parse(savedPerTab);
     TABS.forEach(t => {
       if (loaded[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS_BY_TAB[t], ...loaded[t] };
     });
   }
-  const savedGlobal = localStorage.getItem('smokeinn_v21_global');
+  const savedGlobal = localStorage.getItem('smokeinn_v23_global');
   if (savedGlobal) {
     const loaded = JSON.parse(savedGlobal);
     globalLayout = { ...GLOBAL_DEFAULTS, ...loaded };
   }
 } catch (e) {}
 
-function persistData() { try { localStorage.setItem('smokeinn_v21_data', JSON.stringify(data)); } catch (e) {} }
+function persistData() { try { localStorage.setItem('smokeinn_v23_data', JSON.stringify(data)); } catch (e) {} }
 function persistLayout() {
   try {
-    localStorage.setItem('smokeinn_v21_perTab', JSON.stringify(perTabLayout));
-    localStorage.setItem('smokeinn_v21_global', JSON.stringify(globalLayout));
+    localStorage.setItem('smokeinn_v23_perTab', JSON.stringify(perTabLayout));
+    localStorage.setItem('smokeinn_v23_global', JSON.stringify(globalLayout));
   } catch (e) {}
 }
 
@@ -2251,14 +2398,33 @@ function buildColumn(key, cIdx, col, totalCols, layoutTab) {
 }
 
 function buildPageHTML(key) {
-  // Special case: A4 back side — just a centered large logo
+  // Special case: A4 back side — booklet cover layout.
+  // Right half = front cover (logo + "меню" + QR), left half = empty.
   if (key === 'A4_BACK') {
+    const qrSrc = (data.A4_BACK && data.A4_BACK.qrImage) ? data.A4_BACK.qrImage : '';
+    const hasQr = !!qrSrc;
     return `
       <div class="page-wrap">
-        <div class="page-label">A4 — ОБРАТНАЯ</div>
+        <div class="page-label">A4 — Обратная</div>
         <div class="page page-a4-back">
-          <div class="logo-large" contenteditable="true">SMOKE INN</div>
+          <div class="a4-back-fold-line"></div>
+          <div class="left-half"></div>
+          <div class="right-half">
+            <div class="cover-logo-block">
+              <div class="logo-large" contenteditable="true">SMOKE INN</div>
+              <div class="cover-subtitle" contenteditable="true">меню</div>
+            </div>
+            <div class="qr-block">
+              <div class="qr-placeholder ${hasQr ? 'has-image' : ''}" onclick="document.getElementById('qrUploadInput').click()">
+                ${hasQr 
+                  ? `<img src="${qrSrc}" alt="QR"><div class="qr-replace-hint">Заменить</div>`
+                  : 'Кликните чтобы<br>загрузить<br>QR-код'}
+              </div>
+              <div class="qr-caption" contenteditable="true">мы на яндекс.картах</div>
+            </div>
+          </div>
         </div>
+        <input type="file" id="qrUploadInput" accept="image/*" style="display:none" onchange="uploadQR(event)">
       </div>
     `;
   }
@@ -2333,6 +2499,22 @@ function syncSectionClasses(el, key, cIdx, sIdx) {
 }
 
 function updateFooter(key, val) { data[key].footer = val; persistData(); }
+
+// QR image upload for A4 back cover
+function uploadQR(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (!data.A4_BACK) data.A4_BACK = {};
+    data.A4_BACK.qrImage = e.target.result;
+    persistData();
+    renderPage();
+  };
+  reader.readAsDataURL(file);
+}
 
 function addItem(key, cIdx, sIdx) {
   data[key].columns[cIdx][sIdx].items.push({ name: 'НОВАЯ ПОЗИЦИЯ', vol: '', price: '0', desc: '' });
@@ -2628,14 +2810,14 @@ async function exportPDF() {
     await renderPageToPDF(pdf, 'HALF_BACK', 0, 0, 105, 297);
     
     substep.textContent = 'Встраивание данных для редактирования...';
-    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 21 });
+    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 23 });
     const b64 = btoa(unescape(encodeURIComponent(stateJson)));
     pdf.setProperties({
       title: 'SMOKE INN — Меню',
       subject: 'SMOKEINN_MENU_DATA::' + b64,
       author: 'SMOKE INN editor',
       keywords: 'smokeinn,menu,editable',
-      creator: 'SMOKE INN editor v21'
+      creator: 'SMOKE INN editor v23'
     });
     
     substep.textContent = 'Сохранение файла...';
@@ -2693,15 +2875,37 @@ async function renderPageToPDF(pdf, key, x, y, widthMM, heightMM) {
 }
 
 function buildPageStaticForPDF(key) {
-  // A4 back side — just the logo
+  // A4 back side — booklet cover with logo + meню + QR on right half
   if (key === 'A4_BACK') {
-    // get logo text from current DOM if user edited it (fallback to default)
+    // Pick up live edited values from the DOM if user changed them
     let logoText = 'SMOKE INN';
+    let subtitleText = 'меню';
+    let qrCaptionText = 'мы на яндекс.картах';
     const liveLogo = document.querySelector('.page-a4-back .logo-large');
+    const liveSub = document.querySelector('.page-a4-back .cover-subtitle');
+    const liveCaption = document.querySelector('.page-a4-back .qr-caption');
     if (liveLogo && liveLogo.innerText) logoText = liveLogo.innerText;
+    if (liveSub && liveSub.innerText) subtitleText = liveSub.innerText;
+    if (liveCaption && liveCaption.innerText) qrCaptionText = liveCaption.innerText;
+    
+    const qrSrc = (data.A4_BACK && data.A4_BACK.qrImage) ? data.A4_BACK.qrImage : '';
+    const qrHTML = qrSrc
+      ? `<img src="${qrSrc}" alt="QR" style="width:100%;height:100%;object-fit:contain;display:block;">`
+      : '';
+    
     return `
       <div class="page page-a4-back">
-        <div class="logo-large">${escapeHtml(logoText)}</div>
+        <div class="left-half"></div>
+        <div class="right-half">
+          <div class="cover-logo-block">
+            <div class="logo-large">${escapeHtml(logoText)}</div>
+            <div class="cover-subtitle">${escapeHtml(subtitleText)}</div>
+          </div>
+          <div class="qr-block">
+            <div class="qr-placeholder ${qrSrc ? 'has-image' : ''}">${qrHTML}</div>
+            <div class="qr-caption">${escapeHtml(qrCaptionText)}</div>
+          </div>
+        </div>
       </div>
     `;
   }
