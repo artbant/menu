@@ -359,7 +359,8 @@ html, body {
 }
 
 .page-a4-back .left-half {
-  /* Empty — this becomes the inside of the folded booklet */
+  /* Becomes the inside of the folded booklet */
+  position: relative;
 }
 
 .page-a4-back .right-half {
@@ -369,9 +370,8 @@ html, body {
   position: relative;
 }
 
-/* Logo block is rotated -90deg so when the A4 sheet is folded along its
-   long axis (vertical fold), the booklet cover reads horizontally.
-   The block is absolutely positioned in the upper portion of right half. */
+/* Logo block — centered in right half, rotated -90deg.
+   When folded, this becomes the booklet front cover. */
 .page-a4-back .cover-logo-block {
   position: absolute;
   top: 50%;
@@ -382,9 +382,6 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 6mm;
-  /* When rotated, this becomes the "tall" dimension on the page.
-     Center it visually by offsetting upward (toward the top of the cover). */
-  margin-top: -55mm;
 }
 
 .page-a4-back .logo-large {
@@ -410,6 +407,9 @@ html, body {
   outline: none;
 }
 
+/* QR block — moved to LEFT half, bottom area.
+   Stays in standard orientation (not rotated) so it's scannable
+   when the sheet is flat on the table. */
 .page-a4-back .qr-block {
   position: absolute;
   bottom: 22mm;
@@ -2399,7 +2399,7 @@ function buildColumn(key, cIdx, col, totalCols, layoutTab) {
 
 function buildPageHTML(key) {
   // Special case: A4 back side — booklet cover layout.
-  // Right half = front cover (logo + "меню" + QR), left half = empty.
+  // RIGHT half = front cover (logo + "меню"), LEFT half = inside back cover (QR).
   if (key === 'A4_BACK') {
     const qrSrc = (data.A4_BACK && data.A4_BACK.qrImage) ? data.A4_BACK.qrImage : '';
     const hasQr = !!qrSrc;
@@ -2408,12 +2408,7 @@ function buildPageHTML(key) {
         <div class="page-label">A4 — Обратная</div>
         <div class="page page-a4-back">
           <div class="a4-back-fold-line"></div>
-          <div class="left-half"></div>
-          <div class="right-half">
-            <div class="cover-logo-block">
-              <div class="logo-large" contenteditable="true">SMOKE INN</div>
-              <div class="cover-subtitle" contenteditable="true">меню</div>
-            </div>
+          <div class="left-half">
             <div class="qr-block">
               <div class="qr-placeholder ${hasQr ? 'has-image' : ''}" onclick="document.getElementById('qrUploadInput').click()">
                 ${hasQr 
@@ -2421,6 +2416,12 @@ function buildPageHTML(key) {
                   : 'Кликните чтобы<br>загрузить<br>QR-код'}
               </div>
               <div class="qr-caption" contenteditable="true">мы на яндекс.картах</div>
+            </div>
+          </div>
+          <div class="right-half">
+            <div class="cover-logo-block">
+              <div class="logo-large" contenteditable="true">SMOKE INN</div>
+              <div class="cover-subtitle" contenteditable="true">меню</div>
             </div>
           </div>
         </div>
@@ -2895,15 +2896,16 @@ function buildPageStaticForPDF(key) {
     
     return `
       <div class="page page-a4-back">
-        <div class="left-half"></div>
+        <div class="left-half">
+          <div class="qr-block">
+            <div class="qr-placeholder ${qrSrc ? 'has-image' : ''}">${qrHTML}</div>
+            <div class="qr-caption">${escapeHtml(qrCaptionText)}</div>
+          </div>
+        </div>
         <div class="right-half">
           <div class="cover-logo-block">
             <div class="logo-large">${escapeHtml(logoText)}</div>
             <div class="cover-subtitle">${escapeHtml(subtitleText)}</div>
-          </div>
-          <div class="qr-block">
-            <div class="qr-placeholder ${qrSrc ? 'has-image' : ''}">${qrHTML}</div>
-            <div class="qr-caption">${escapeHtml(qrCaptionText)}</div>
           </div>
         </div>
       </div>
