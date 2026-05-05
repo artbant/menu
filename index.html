@@ -573,7 +573,7 @@ html, body {
 .logo-box {
   display: inline-flex;
   align-items: center;
-  padding: 5mm 9mm;
+  padding: 2.4mm 9mm;
   border: 1.6pt solid #0a0a0a;
   font-weight: 700;
   font-size: 22pt;
@@ -589,7 +589,7 @@ html, body {
   flex-direction: column;
   align-items: flex-end;
   text-align: right;
-  font-size: 9.5pt;
+  font-size: 11.5pt;
   line-height: 1.4;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -707,6 +707,13 @@ html, body {
   letter-spacing: var(--tracking);
   text-transform: uppercase;
   outline: none;
+}
+
+/* Bold note — for emphasized callouts like "к каждому блюду подаётся..." */
+.menu-section.has-note.note-bold .menu-section-note {
+  font-weight: 700;
+  font-style: normal;
+  color: #0a0a0a;
 }
 
 .menu-section.has-note .menu-section-note::before {
@@ -1944,7 +1951,7 @@ const DEFAULT_DATA = {
           { name: 'ЦЕЗАРЬ С КУРИЦЕЙ', vol: '', price: '690', desc: 'КУРИНАЯ ГРУДКА, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' },
           { name: 'ЦЕЗАРЬ С КРЕВЕТКАМИ', vol: '', price: '790', desc: 'КРЕВЕТКИ, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' }
         ]},
-        { title: 'ГОРЯЧЕЕ', volume: '', note: 'К КАЖДОМУ БЛЮДУ ПОДАЁТСЯ МИКС-САЛАТ И КАРТОШКА ФРИ / БАТАТ ФРИ НА ВЫБОР ГОСТЯ', items: [
+        { title: 'ГОРЯЧЕЕ', volume: '', note: 'К КАЖДОМУ БЛЮДУ ПОДАЁТСЯ МИКС-САЛАТ И КАРТОШКА ФРИ / БАТАТ ФРИ НА ВЫБОР ГОСТЯ', noteBold: true, items: [
           { name: 'БОЛОНЬЕЗЕ А-ЛЯ МЕКСИКА', vol: '', price: '690', desc: 'ФАРШ ГОВЯДИНА, ТОМАТНАЯ ПАСТА, ХЛОПЬЯ ЧИЛИ, КИНЗА, СЫЧУАНЬСКИЙ ПЕРЕЦ' },
           { name: 'КУРИЦА ПО-ТАЙСКИ', vol: '', price: '590', desc: 'КУРИНАЯ ГРУДКА, СПАЙСИ СОУС, ТЕРИЯКИ СОУС, КУНЖУТ, КИНЗА' },
           { name: 'БЕФСТРОГАНОВ', vol: '', price: '690', desc: 'ГОВЯДИНА, СЛИВКИ, ЛУК РЕПЧАТЫЙ, ШАМПИНЬОНЫ, ПЕРЕЦ ГОРОШЕК, СЛИВОЧНОЕ МАСЛО, МАРИНОВАННЫЕ ОГУРЦЫ' },
@@ -2090,7 +2097,7 @@ const PER_TAB_DEFAULTS_BY_TAB = {
     '--gap-sections':       3.5,
     '--gap-title-to-note':  1.5,
     '--gap-title-to-items': 2.0,
-    '--gap-note-to-items':  2.0,
+    '--gap-note-to-items':  2.1,
     '--gap-items':          1.0,
     '--gap-items-desc':     3.1,
     '--gap-name-to-desc':   0.25
@@ -2099,12 +2106,12 @@ const PER_TAB_DEFAULTS_BY_TAB = {
     ...PER_TAB_DEFAULTS,
     '--size-section-volume': 7,
     '--size-item-volume':    6,
-    '--gap-sections':       3.0,
+    '--gap-sections':       6.8,
     '--gap-title-to-note':  1.5,
     '--gap-title-to-items': 2.0,
     '--gap-note-to-items':  2.0,
-    '--gap-items':          2.2,
-    '--gap-items-desc':     5.8,
+    '--gap-items':          1.6,
+    '--gap-items-desc':     4.6,
     '--gap-name-to-desc':   0.30
   },
   'HALF_FRONT': {
@@ -2143,30 +2150,30 @@ let currentLayoutTarget = 'A4_LEFT';
 let zoom = 0.7;
 
 try {
-  const savedData = localStorage.getItem('smokeinn_v23_data');
+  const savedData = localStorage.getItem('smokeinn_v25_data');
   if (savedData) {
     const loaded = JSON.parse(savedData);
     if (loaded.A4 && loaded.HALF_FRONT && loaded.HALF_BACK) data = loaded;
   }
-  const savedPerTab = localStorage.getItem('smokeinn_v23_perTab');
+  const savedPerTab = localStorage.getItem('smokeinn_v25_perTab');
   if (savedPerTab) {
     const loaded = JSON.parse(savedPerTab);
     TABS.forEach(t => {
       if (loaded[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS_BY_TAB[t], ...loaded[t] };
     });
   }
-  const savedGlobal = localStorage.getItem('smokeinn_v23_global');
+  const savedGlobal = localStorage.getItem('smokeinn_v25_global');
   if (savedGlobal) {
     const loaded = JSON.parse(savedGlobal);
     globalLayout = { ...GLOBAL_DEFAULTS, ...loaded };
   }
 } catch (e) {}
 
-function persistData() { try { localStorage.setItem('smokeinn_v23_data', JSON.stringify(data)); } catch (e) {} }
+function persistData() { try { localStorage.setItem('smokeinn_v25_data', JSON.stringify(data)); } catch (e) {} }
 function persistLayout() {
   try {
-    localStorage.setItem('smokeinn_v23_perTab', JSON.stringify(perTabLayout));
-    localStorage.setItem('smokeinn_v23_global', JSON.stringify(globalLayout));
+    localStorage.setItem('smokeinn_v25_perTab', JSON.stringify(perTabLayout));
+    localStorage.setItem('smokeinn_v25_global', JSON.stringify(globalLayout));
   } catch (e) {}
 }
 
@@ -2349,6 +2356,7 @@ function buildSection(key, cIdx, sIdx, s, totalSections, totalCols) {
   let sectionClass = 'menu-section';
   if (sectionHasVol) sectionClass += ' has-vol';
   if (sectionHasNote) sectionClass += ' has-note';
+  if (s.noteBold) sectionClass += ' note-bold';
   
   return `
     <div class="${sectionClass}">
@@ -2801,14 +2809,14 @@ async function exportPDF() {
     await renderPageToPDF(pdf, 'HALF_BACK', 0, 0, 105, 297);
     
     substep.textContent = 'Встраивание данных для редактирования...';
-    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 23 });
+    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 25 });
     const b64 = btoa(unescape(encodeURIComponent(stateJson)));
     pdf.setProperties({
       title: 'SMOKE INN — Меню',
       subject: 'SMOKEINN_MENU_DATA::' + b64,
       author: 'SMOKE INN editor',
       keywords: 'smokeinn,menu,editable',
-      creator: 'SMOKE INN editor v23'
+      creator: 'SMOKE INN editor v25'
     });
     
     substep.textContent = 'Сохранение файла...';
@@ -2933,6 +2941,7 @@ function buildPageStaticForPDF(key) {
     let sectionClass = 'menu-section';
     if (sectionHasVol) sectionClass += ' has-vol';
     if (sectionHasNote) sectionClass += ' has-note';
+    if (s.noteBold) sectionClass += ' note-bold';
     
     const volPart = sectionHasVol ? `<span class="menu-section-volume">${escapeHtml(s.volume)}</span>` : '';
     const notePart = sectionHasNote ? `<div class="menu-section-note">${escapeHtml(s.note)}</div>` : '';
