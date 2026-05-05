@@ -261,6 +261,15 @@ html, body {
 .left-nav .spacer { flex: 1; }
 .left-nav input[type="file"] { display: none; }
 
+.nav-hint {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+  margin-top: 10px;
+  letter-spacing: 0.02em;
+}
+
 /* ============== CENTRAL WORKSPACE — always centers content ============== */
 .workspace {
   background: var(--bg);
@@ -1463,6 +1472,17 @@ body:not(.preview-mode) .page-footer:empty::before {
   background: white;
 }
 
+/* Print-quality font rendering inside the export host.
+   geometricPrecision — best for vector-like fidelity at high zoom levels.
+   Avoids subpixel hinting which produces "fuzzy" edges when canvas-scaled. */
+.pdf-render-host,
+.pdf-render-host * {
+  text-rendering: geometricPrecision !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  font-smooth: always !important;
+}
+
 /* ============== SCROLLBAR ============== */
 .left-nav::-webkit-scrollbar,
 .controls-content::-webkit-scrollbar,
@@ -1488,6 +1508,139 @@ body:not(.preview-mode) .page-footer:empty::before {
 .controls-content::-webkit-scrollbar-thumb:hover,
 .workspace::-webkit-scrollbar-thumb:hover {
   background: var(--ink-dim);
+}
+
+/* ============== PRINT MODE ==============
+   When body has .print-mode class, only the page-stack containing all
+   4 pages is visible — UI panels, buttons, hints all hidden.
+   Browser's Cmd+P will then save a clean vector PDF. */
+body.print-mode .left-nav,
+body.print-mode .right-panel,
+body.print-mode .layout-toggle,
+body.print-mode .page-label,
+body.print-mode .a4-cutoff,
+body.print-mode .delete-item,
+body.print-mode .section-controls,
+body.print-mode .add-item-btn,
+body.print-mode .column-add-section,
+body.print-mode .export-overlay {
+  display: none !important;
+}
+
+body.print-mode {
+  background: white !important;
+}
+
+body.print-mode .app {
+  display: block;
+  height: auto;
+}
+
+body.print-mode .workspace {
+  background: white !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  display: block !important;
+}
+
+body.print-mode .pages-stack {
+  transform: none !important;
+  margin: 0 !important;
+}
+
+body.print-mode .page-wrap {
+  page-break-after: always;
+  break-after: page;
+  margin: 0 !important;
+}
+
+body.print-mode .page-wrap:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/* Show empty placeholders are hidden in print, even on hover */
+body.print-mode .menu-item:not(.has-vol) .item-volume:empty,
+body.print-mode .menu-item:not(.has-desc) .item-description:empty,
+body.print-mode .menu-section:not(.has-vol) .menu-section-volume:empty,
+body.print-mode .menu-section:not(.has-note) .menu-section-note:empty {
+  display: none !important;
+}
+body.print-mode .page-footer:empty { display: none !important; }
+
+@media print {
+  /* These rules apply when Ctrl+P is invoked */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  
+  @page half-page {
+    size: 105mm 297mm portrait;
+    margin: 0;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Force hide everything except pages */
+  .left-nav, .right-panel, .layout-toggle,
+  .page-label, .a4-cutoff,
+  .delete-item, .section-controls,
+  .add-item-btn, .column-add-section,
+  .export-overlay {
+    display: none !important;
+  }
+  
+  /* Hide empty placeholders in print */
+  .menu-item:not(.has-vol) .item-volume:empty,
+  .menu-item:not(.has-desc) .item-description:empty,
+  .menu-section:not(.has-vol) .menu-section-volume:empty,
+  .menu-section:not(.has-note) .menu-section-note:empty,
+  .page-footer:empty {
+    display: none !important;
+  }
+  
+  .app {
+    display: block;
+    height: auto;
+  }
+  
+  .workspace {
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  
+  .pages-stack {
+    transform: none !important;
+    margin: 0 !important;
+  }
+  
+  .page-wrap {
+    page-break-after: always;
+    break-after: page;
+    margin: 0 !important;
+  }
+  
+  .page-wrap:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  
+  .page-half {
+    page: half-page;
+  }
+  
+  .page {
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
 }
 </style>
 </head>
@@ -1533,6 +1686,8 @@ body:not(.preview-mode) .page-footer:empty::before {
 
     <div class="nav-section">
       <button class="btn-pdf" id="pdfBtn" onclick="exportPDF()">Экспорт PDF</button>
+      <button class="btn" id="printBtn" onclick="printForProduction()" style="margin-top: 8px;">🖨 Печать (для типографии)</button>
+      <div class="nav-hint">Экспорт = архив с возможностью редактирования. Печать = векторный PDF идеального качества для типографии.</div>
     </div>
   </aside>
 
@@ -2375,6 +2530,51 @@ function hidePaddingHint() {
   document.querySelectorAll('.page-padding-hint').forEach(el => el.remove());
 }
 
+// ============== PRINT FOR PRODUCTION ==============
+// Renders all 4 pages into the DOM, sets print-mode, then calls
+// window.print(). The browser produces a clean vector PDF / sends to
+// a printer with native font rendering — no html2canvas, no rasterization,
+// no fuzzy text. Smallest file, perfect quality.
+async function printForProduction() {
+  const btn = document.getElementById('printBtn');
+  if (!btn) return;
+  
+  // Wait for fonts
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+  
+  // Render all pages stacked into the preview area
+  const previewArea = document.getElementById('previewArea');
+  const previousHTML = previewArea.innerHTML;
+  const previousTransform = previewArea.style.transform;
+  
+  const pageOrder = ['A4', 'A4_BACK', 'HALF_FRONT', 'HALF_BACK'];
+  previewArea.innerHTML = pageOrder.map(key => buildPageHTML(key)).join('');
+  previewArea.style.transform = 'none';
+  
+  // Apply layout vars to scoped containers (per-tab settings)
+  applyLayout();
+  
+  // Enter print mode
+  document.body.classList.add('print-mode');
+  
+  // Trigger browser's print dialog
+  // Wait a tick so layout settles
+  await new Promise(r => setTimeout(r, 100));
+  
+  window.print();
+  
+  // After print dialog closes, restore the editor view
+  // (this runs whether user printed or cancelled)
+  setTimeout(() => {
+    document.body.classList.remove('print-mode');
+    previewArea.innerHTML = previousHTML;
+    previewArea.style.transform = previousTransform;
+    renderPage();
+  }, 500);
+}
+
 // ============== EXPORT PDF ==============
 async function exportPDF() {
   const btn = document.getElementById('pdfBtn');
@@ -2401,7 +2601,13 @@ async function exportPDF() {
     }
     
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+    const pdf = new jsPDF({ 
+      orientation: 'portrait', 
+      unit: 'mm', 
+      format: 'a4', 
+      compress: true,
+      hotfixes: ['px_scaling']
+    });
     
     substep.textContent = 'Стр. 1: A4 лицевая (бар + кухня)...';
     await renderPageToPDF(pdf, 'A4', 0, 0, 210, 297);
@@ -2462,21 +2668,27 @@ async function renderPageToPDF(pdf, key, x, y, widthMM, heightMM) {
   
   await new Promise(r => setTimeout(r, 80));
   
+  // Reasonable scale for archival/editable PDF (~285 DPI for A4, 
+  // similar to typical print quality). For pristine print quality,
+  // use the "Print" button which renders vector via browser.
+  const RENDER_SCALE = 3;
+  
   const canvas = await html2canvas(pageEl, {
-    scale: 4,
+    scale: RENDER_SCALE,
     backgroundColor: '#ffffff',
     useCORS: true,
     logging: false,
     letterRendering: true,
     allowTaint: false,
+    imageTimeout: 0,
     width: pageEl.offsetWidth,
     height: pageEl.offsetHeight,
     windowWidth: pageEl.offsetWidth,
     windowHeight: pageEl.offsetHeight
   });
   
-  const imgData = canvas.toDataURL('image/jpeg', 0.98);
-  pdf.addImage(imgData, 'JPEG', x, y, widthMM, heightMM, undefined, 'NONE');
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
+  pdf.addImage(imgData, 'JPEG', x, y, widthMM, heightMM, undefined, 'FAST');
   host.innerHTML = '';
 }
 
