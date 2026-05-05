@@ -52,7 +52,7 @@
 
   /* Page-level (global) */
   --gap-columns: 12mm;
-  --gap-header-to-content: 6mm;
+  --gap-header-to-content: 4.7mm;
   --gap-content-to-footer: 3mm;
 
   /* Page padding */
@@ -712,7 +712,7 @@ html, body {
 /* Bold note — for emphasized callouts like "к каждому блюду подаётся..." */
 .menu-section.has-note.note-bold .menu-section-note {
   font-weight: 700;
-  font-style: normal;
+  font-style: italic;
   color: #0a0a0a;
 }
 
@@ -2066,7 +2066,7 @@ const GLOBAL_CONTROLS = [
   ]},
   { group: 'СТРАНИЦА — ОТСТУПЫ', controls: [
     { var: '--gap-columns',           label: 'Между колонками A4',     unit: 'mm', min: 4, max: 24, step: 0.5, default: 12, highlight: '.page-a4 .content-area' },
-    { var: '--gap-header-to-content', label: 'Шапка → контент',        unit: 'mm', min: 2, max: 14, step: 0.5, default: 6,  highlight: '.page-header' },
+    { var: '--gap-header-to-content', label: 'Шапка → контент',        unit: 'mm', min: 2, max: 14, step: 0.5, default: 4.7,  highlight: '.page-header' },
     { var: '--gap-content-to-footer', label: 'Контент → подвал',       unit: 'mm', min: 0, max: 12, step: 0.5, default: 3,  highlight: '.page-footer' }
   ]},
   { group: 'ПОЛЯ A4', controls: [
@@ -2150,30 +2150,30 @@ let currentLayoutTarget = 'A4_LEFT';
 let zoom = 0.7;
 
 try {
-  const savedData = localStorage.getItem('smokeinn_v25_data');
+  const savedData = localStorage.getItem('smokeinn_v26_data');
   if (savedData) {
     const loaded = JSON.parse(savedData);
     if (loaded.A4 && loaded.HALF_FRONT && loaded.HALF_BACK) data = loaded;
   }
-  const savedPerTab = localStorage.getItem('smokeinn_v25_perTab');
+  const savedPerTab = localStorage.getItem('smokeinn_v26_perTab');
   if (savedPerTab) {
     const loaded = JSON.parse(savedPerTab);
     TABS.forEach(t => {
       if (loaded[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS_BY_TAB[t], ...loaded[t] };
     });
   }
-  const savedGlobal = localStorage.getItem('smokeinn_v25_global');
+  const savedGlobal = localStorage.getItem('smokeinn_v26_global');
   if (savedGlobal) {
     const loaded = JSON.parse(savedGlobal);
     globalLayout = { ...GLOBAL_DEFAULTS, ...loaded };
   }
 } catch (e) {}
 
-function persistData() { try { localStorage.setItem('smokeinn_v25_data', JSON.stringify(data)); } catch (e) {} }
+function persistData() { try { localStorage.setItem('smokeinn_v26_data', JSON.stringify(data)); } catch (e) {} }
 function persistLayout() {
   try {
-    localStorage.setItem('smokeinn_v25_perTab', JSON.stringify(perTabLayout));
-    localStorage.setItem('smokeinn_v25_global', JSON.stringify(globalLayout));
+    localStorage.setItem('smokeinn_v26_perTab', JSON.stringify(perTabLayout));
+    localStorage.setItem('smokeinn_v26_global', JSON.stringify(globalLayout));
   } catch (e) {}
 }
 
@@ -2809,14 +2809,14 @@ async function exportPDF() {
     await renderPageToPDF(pdf, 'HALF_BACK', 0, 0, 105, 297);
     
     substep.textContent = 'Встраивание данных для редактирования...';
-    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 25 });
+    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 26 });
     const b64 = btoa(unescape(encodeURIComponent(stateJson)));
     pdf.setProperties({
       title: 'SMOKE INN — Меню',
       subject: 'SMOKEINN_MENU_DATA::' + b64,
       author: 'SMOKE INN editor',
       keywords: 'smokeinn,menu,editable',
-      creator: 'SMOKE INN editor v25'
+      creator: 'SMOKE INN editor v26'
     });
     
     substep.textContent = 'Сохранение файла...';
