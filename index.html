@@ -639,11 +639,19 @@ html, body {
   gap: 0;
 }
 
-.menu-section:not(:last-child) {
+/* Bottom padding only when the divider below will actually be drawn,
+   so the last section in a column sits flush with the column edge. */
+.menu-section:has(~ .menu-section) {
   padding-bottom: calc(var(--gap-sections) / 2);
 }
 
-.menu-section:not(:last-child)::after {
+/* Dotted divider between sections.
+   We draw it whenever this section has another section after it (anywhere
+   later in the column), which means the divider is omitted only after the
+   LAST section in the column. Using sibling selectors (independent of any
+   trailing button in the editor) keeps behavior identical between editor
+   and exported PDF. */
+.menu-section:has(~ .menu-section)::after {
   content: "";
   display: block;
   position: absolute;
@@ -652,6 +660,11 @@ html, body {
   bottom: 0;
   height: 0;
   border-bottom: 1.2pt dotted #777;
+}
+
+/* No divider before footer (kept for safety, in case section structure changes) */
+.menu-section:has(+ * .page-footer)::after {
+  display: none !important;
 }
 
 .section-title-line {
@@ -765,6 +778,34 @@ html, body {
   outline: none;
   word-break: break-word;
   font-size: var(--size-item-name);
+}
+
+/* Spicy label — small "hot" badge in a rounded outline, sits inline after dish name.
+   Black to match the dish title. Lifted 6px above the baseline so it visually
+   sits above the title's x-height. Sized smaller than the title's cap-height
+   so the inline-block doesn't expand the row's line-height. */
+.spicy-icon {
+  display: inline-block;
+  font-family: var(--font-ui), 'JetBrains Mono', monospace;
+  font-size: calc(var(--size-item-name) * 0.75);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: #0a0a0a;
+  border: 0.7pt solid #0a0a0a;
+  border-radius: 1.2mm;
+  padding: 0.35mm 1.0mm 0.45mm;
+  margin-left: 0.5mm;
+  white-space: nowrap;
+  flex-shrink: 0;
+  /* Lift 3px above the text baseline */
+  transform: translateY(-3px);
+  vertical-align: baseline;
+}
+
+.spicy-icon svg {
+  display: block;
 }
 
 /* Volume — only when has-vol */
@@ -1186,18 +1227,29 @@ html, body {
 
 /* ============== PAGE FOOTER ============== */
 .page-footer {
-  margin-top: auto;
   padding-top: var(--gap-content-to-footer);
   text-align: center;
   font-size: var(--size-footer);
-  color: #0a0a0a;
-  font-weight: 500;
+  color: #444;
+  font-weight: 400;
+  font-style: italic;
   letter-spacing: var(--tracking);
   text-transform: uppercase;
   outline: none;
+  white-space: pre;
+  line-height: 1.15;
 }
 
-.page-footer::before { content: "*"; margin-right: 2mm; }
+/* Smaller, tighter footer on half pages — narrower column.
+   Negative margin pulls the wine note up closer to the spirits list
+   without affecting the menu items above it. */
+.page-half .page-footer {
+  font-size: 8.5pt;
+  letter-spacing: 0.08em;
+  margin-top: -44px;
+}
+
+.page-footer::before { content: ""; }
 .page-footer:empty { display: none; }
 .page-footer:empty::before { content: none; }
 body:not(.preview-mode) .page-footer:empty {
@@ -1952,8 +2004,8 @@ const DEFAULT_DATA = {
           { name: 'ЦЕЗАРЬ С КРЕВЕТКАМИ', vol: '', price: '790', desc: 'КРЕВЕТКИ, СОУС ЦЕЗАРЬ, МИКС САЛАТ, ЧЕРРИ, ГРЕНКИ ИЗ ЧИАБАТТЫ, ПАРМЕЗАН' }
         ]},
         { title: 'ГОРЯЧЕЕ', volume: '', note: 'К КАЖДОМУ БЛЮДУ ПОДАЁТСЯ МИКС-САЛАТ И КАРТОШКА ФРИ / БАТАТ ФРИ НА ВЫБОР ГОСТЯ', noteBold: true, items: [
-          { name: 'БОЛОНЬЕЗЕ А-ЛЯ МЕКСИКА', vol: '', price: '690', desc: 'ФАРШ ГОВЯДИНА, ТОМАТНАЯ ПАСТА, ХЛОПЬЯ ЧИЛИ, КИНЗА, СЫЧУАНЬСКИЙ ПЕРЕЦ' },
-          { name: 'КУРИЦА ПО-ТАЙСКИ', vol: '', price: '590', desc: 'КУРИНАЯ ГРУДКА, СПАЙСИ СОУС, ТЕРИЯКИ СОУС, КУНЖУТ, КИНЗА' },
+          { name: 'БОЛОНЬЕЗЕ А-ЛЯ МЕКСИКА', vol: '', price: '690', desc: 'ФАРШ ГОВЯДИНА, ТОМАТНАЯ ПАСТА, ХЛОПЬЯ ЧИЛИ, КИНЗА, СЫЧУАНЬСКИЙ ПЕРЕЦ', spicy: true },
+          { name: 'КУРИЦА ПО-ТАЙСКИ', vol: '', price: '590', desc: 'КУРИНАЯ ГРУДКА, СПАЙСИ СОУС, ТЕРИЯКИ СОУС, КУНЖУТ, КИНЗА', spicy: true },
           { name: 'БЕФСТРОГАНОВ', vol: '', price: '690', desc: 'ГОВЯДИНА, СЛИВКИ, ЛУК РЕПЧАТЫЙ, ШАМПИНЬОНЫ, ПЕРЕЦ ГОРОШЕК, СЛИВОЧНОЕ МАСЛО, МАРИНОВАННЫЕ ОГУРЦЫ' },
           { name: 'ПАРМЕЗАН БАЗИЛИК', vol: '', price: '590', desc: 'АЙОЛИ БАЗИЛИК, БАЗИЛИК, ТОМАТНЫЙ СОУС, ПАРМЕЗАН' },
           { name: 'ЦЕЗАРЬ ПОЛО', vol: '', price: '590', desc: 'КУРИНОЕ ФИЛЕ, СОУС ЦЕЗАРЬ, ЧЕРРИ, ПАРМЕЗАН' }
@@ -2000,7 +2052,8 @@ const DEFAULT_DATA = {
       { title: 'НАСТОЙКИ', volume: '40МЛ', note: '', items: [
         { name: 'В АССОРТИМЕНТЕ', vol: '', price: '290', desc: '' }
       ]}
-    ]]
+    ]],
+    footer: 'ЕСТЬ В НАЛИЧИИ ВИНА: КРАСНЫЕ, БЕЛЫЕ И ИГРИСТЫЕ.\nУТОЧНЯЙТЕ АССОРТИМЕНТ У БАРМЕНА'
   },
   HALF_BACK: {
     columns: [[
@@ -2111,12 +2164,18 @@ const PER_TAB_DEFAULTS_BY_TAB = {
     '--gap-title-to-items': 2.0,
     '--gap-note-to-items':  2.0,
     '--gap-items':          1.6,
-    '--gap-items-desc':     4.6,
+    '--gap-items-desc':     4.8,
     '--gap-name-to-desc':   0.30
   },
   'HALF_FRONT': {
     ...PER_TAB_DEFAULTS,
-    '--gap-sections':       8.4,
+    '--size-section-volume': 8,
+    '--size-section-note':   7,
+    '--size-item-name':      9.5,
+    '--size-item-volume':    6.8,
+    '--size-item-price':     9.5,
+    '--size-item-desc':      7.5,
+    '--gap-sections':       7.8,
     '--gap-title-to-note':  1.5,
     '--gap-title-to-items': 3.2,
     '--gap-note-to-items':  2.1,
@@ -2150,30 +2209,30 @@ let currentLayoutTarget = 'A4_LEFT';
 let zoom = 0.7;
 
 try {
-  const savedData = localStorage.getItem('smokeinn_v26_data');
+  const savedData = localStorage.getItem('smokeinn_v30_data');
   if (savedData) {
     const loaded = JSON.parse(savedData);
     if (loaded.A4 && loaded.HALF_FRONT && loaded.HALF_BACK) data = loaded;
   }
-  const savedPerTab = localStorage.getItem('smokeinn_v26_perTab');
+  const savedPerTab = localStorage.getItem('smokeinn_v30_perTab');
   if (savedPerTab) {
     const loaded = JSON.parse(savedPerTab);
     TABS.forEach(t => {
       if (loaded[t]) perTabLayout[t] = { ...PER_TAB_DEFAULTS_BY_TAB[t], ...loaded[t] };
     });
   }
-  const savedGlobal = localStorage.getItem('smokeinn_v26_global');
+  const savedGlobal = localStorage.getItem('smokeinn_v30_global');
   if (savedGlobal) {
     const loaded = JSON.parse(savedGlobal);
     globalLayout = { ...GLOBAL_DEFAULTS, ...loaded };
   }
 } catch (e) {}
 
-function persistData() { try { localStorage.setItem('smokeinn_v26_data', JSON.stringify(data)); } catch (e) {} }
+function persistData() { try { localStorage.setItem('smokeinn_v30_data', JSON.stringify(data)); } catch (e) {} }
 function persistLayout() {
   try {
-    localStorage.setItem('smokeinn_v26_perTab', JSON.stringify(perTabLayout));
-    localStorage.setItem('smokeinn_v26_global', JSON.stringify(globalLayout));
+    localStorage.setItem('smokeinn_v30_perTab', JSON.stringify(perTabLayout));
+    localStorage.setItem('smokeinn_v30_global', JSON.stringify(globalLayout));
   } catch (e) {}
 }
 
@@ -2317,12 +2376,17 @@ function buildHeader() {
   `;
 }
 
+const SPICY_SVG = `hot`;
+
 function buildItem(key, cIdx, sIdx, iIdx, item) {
   const itemHasVol = hasContent(item.vol);
   const itemHasDesc = hasContent(item.desc);
   let itemClass = 'menu-item';
   if (itemHasVol) itemClass += ' has-vol';
   if (itemHasDesc) itemClass += ' has-desc';
+  if (item.spicy) itemClass += ' is-spicy';
+  
+  const spicyIcon = item.spicy ? `<span class="spicy-icon" title="острое">${SPICY_SVG}</span>` : '';
   
   return `
     <div class="${itemClass}">
@@ -2330,7 +2394,7 @@ function buildItem(key, cIdx, sIdx, iIdx, item) {
       <div class="menu-item-row">
         <div class="menu-item-name-wrap">
           <span class="name" contenteditable="true" 
-                oninput="updateItem('${key}', ${cIdx}, ${sIdx}, ${iIdx}, 'name', this.innerText)">${escapeHtml(item.name)}</span>
+                oninput="updateItem('${key}', ${cIdx}, ${sIdx}, ${iIdx}, 'name', this.innerText)">${escapeHtml(item.name)}</span>${spicyIcon}
           <span class="item-volume" contenteditable="true" 
                 oninput="updateItem('${key}', ${cIdx}, ${sIdx}, ${iIdx}, 'vol', this.innerText)"
                 onblur="syncItemClasses(this, '${key}', ${cIdx}, ${sIdx}, ${iIdx})">${escapeHtml(item.vol || '')}</span>
@@ -2442,7 +2506,7 @@ function buildPageHTML(key) {
   }
   
   const headerHTML = isA4 ? buildHeader() : '';
-  const footerHTML = (isA4 && tabData.footer !== undefined) 
+  const footerHTML = (tabData.footer !== undefined) 
     ? `<div class="page-footer" contenteditable="true" oninput="updateFooter('${key}', this.innerText)">${escapeHtml(tabData.footer)}</div>`
     : '';
   
@@ -2809,14 +2873,14 @@ async function exportPDF() {
     await renderPageToPDF(pdf, 'HALF_BACK', 0, 0, 105, 297);
     
     substep.textContent = 'Встраивание данных для редактирования...';
-    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 26 });
+    const stateJson = JSON.stringify({ data, perTabLayout, globalLayout, version: 30 });
     const b64 = btoa(unescape(encodeURIComponent(stateJson)));
     pdf.setProperties({
       title: 'SMOKE INN — Меню',
       subject: 'SMOKEINN_MENU_DATA::' + b64,
       author: 'SMOKE INN editor',
       keywords: 'smokeinn,menu,editable',
-      creator: 'SMOKE INN editor v26'
+      creator: 'SMOKE INN editor v30'
     });
     
     substep.textContent = 'Сохранение файла...';
@@ -2919,14 +2983,16 @@ function buildPageStaticForPDF(key) {
     let itemClass = 'menu-item';
     if (itemHasVol) itemClass += ' has-vol';
     if (itemHasDesc) itemClass += ' has-desc';
+    if (item.spicy) itemClass += ' is-spicy';
     
+    const spicyIcon = item.spicy ? `<span class="spicy-icon">${SPICY_SVG}</span>` : '';
     const volPart = itemHasVol ? `<span class="item-volume">${escapeHtml(item.vol)}</span>` : '';
     const descPart = itemHasDesc ? `<div class="item-description">${escapeHtml(item.desc)}</div>` : '';
     return `
       <div class="${itemClass}">
         <div class="menu-item-row">
           <div class="menu-item-name-wrap">
-            <span class="name">${escapeHtml(item.name)}</span>${volPart}
+            <span class="name">${escapeHtml(item.name)}</span>${spicyIcon}${volPart}
           </div>
           <span class="price">${escapeHtml(item.price)}</span>
         </div>
@@ -2978,7 +3044,7 @@ function buildPageStaticForPDF(key) {
     columnsHTML = buildColumnStatic(tabData.columns[0], key);
   }
   
-  const footerHTML = (isA4 && tabData.footer) ? `<div class="page-footer">${escapeHtml(tabData.footer)}</div>` : '';
+  const footerHTML = tabData.footer ? `<div class="page-footer">${escapeHtml(tabData.footer)}</div>` : '';
   const pageClass = isA4 ? 'page page-a4' : 'page page-half';
   
   return `
